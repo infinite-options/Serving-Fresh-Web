@@ -1,5 +1,5 @@
-# serving-now-frontend
-Serving Now Front End Web App
+# serving-fresh-web
+Serving Now Web App
 
 1. Activate the `infiniteoptions` virtual environment in your terminal. 
     - Refer to this repository for set up information
