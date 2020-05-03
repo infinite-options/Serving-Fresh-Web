@@ -49,6 +49,15 @@
   width: 100px;
 }
 
+.number-col {
+  width: 80px;
+}
+
 .orderbtn-col {
   width: 100px;
+}
+
+.reportbtn-gap {
+  margin-bottom:3px;
+  margin-right:3px;
 }

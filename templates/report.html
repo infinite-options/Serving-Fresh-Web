@@ -4,7 +4,7 @@
 	<script src="ordermeal.js"></script>
 	<script>
 		function delivery( order_id ) {
-			const button = $( `#${order_id}` );
+			const button = $( `#${order_id}_deliver` );
 
 			$.ajax( {
 				type: 'POST',
@@ -14,6 +14,10 @@
 					button.html( button.text() === 'Deliver' ? 'Cancel' : 'Deliver' );
 				}
 			} );
+		}
+
+		function deleteItem( order_id ) {
+
 		}
 	</script>
 	<link rel="stylesheet" type="text/css" href="{{ url_for('.static', filename='css/reportStyle.css' ) }}">
@@ -34,6 +38,19 @@
 					<a href="/api/v1/kitchen/customers" download="customers.csv">
 						<button class="btn btn-primary" type="submit">Customer Details</button>
 					</a>
+					<div class="border-top ml-4 p-2 mb-1 mt-1">
+						<table class='table table-borderless mb-0'>
+							<thead>
+							<th class="time-col align-middle table-borderless" scope="col">Time</th>
+							<th class="name-col align-middle table-borderless" scope="col">Name</th>
+							<th class="address-col align-middle table-borderless" scope="col">Address</th>
+							<th class="phone-col align-middle table-borderless" scope="col">Phone</th>
+							<th class="number-col align-middle table-borderless" scope="col">Total ($)</th>
+							<th class="number-col align-middle table-borderless" scope="col">Items</th>
+							<th class="orderbtn-col align-middle"></th>
+							</thead>
+						</table>
+					</div>
 				{% endif %}
 				{% for order in openOrders %}
 					{% set outer_loop = loop %}
@@ -42,6 +59,7 @@
 					{% else %}
 						<div class="border-bottom ml-4 p-2 mb-1 mt-1">
 					{% endif %}
+
 				<table class='table table-borderless mb-0'>
 					<tbody>
 					<tr>
@@ -52,14 +70,20 @@
 							<div> {{ order.city.S }}, {{ order.state.S }} {{ order.zipCode.N }} </div>
 						</td>
 						<td class="phone-col align-middle table-borderless">{{ order.phone.S }}</td>
+						<td class="number-col align-middle table-borderless">{{ order.totalAmount.N }}</td>
+						<td class="number-col align-middle table-borderless">{{ order.order_items.L|length }}</td>
 						<td class="orderbtn-col align-middle">
-							<button class="btn btn-primary btn-sm float-right" type=x"button" data-toggle="collapse"
+							<button class="btn btn-primary btn-sm float-right reportbtn-gap" type=x"button" data-toggle="collapse"
 							        data-target="#openCollapse{{ loop.index }}" aria-expanded="false"
-							        aria-controls="collapseExample" style="margin-bottom:3px; margin-right:3px">
+							        aria-controls="collapseExample">
 								Orders
 							</button>
-							<button id="{{ order.order_id.S }}" class="btn btn-primary btn-sm float-right" type="button"
+							<button id="{{ order.order_id.S }}_deliver" class="btn btn-primary btn-sm float-right reportbtn-gap" type="button"
 							        onclick="delivery('{{ order.order_id.S }}')">Deliver</button>
+							<button id="{{ order.order_id.S }}_delete" class="btn btn-primary btn-sm float-right reportbtn-gap" type="button"
+							        onclick="deleteItem('{{ order.order_id.S }}')">
+								Delete
+							</button>
 						</td>
 					</tr>
 					</tbody>
@@ -160,14 +184,18 @@
 							</td>
 							<td class="phone-col align-middle table-borderless">{{ order.phone.S }}</td>
 							<td class="orderbtn-col align-middle">
-								<button class="btn btn-primary btn-sm float-right" type=x"button" data-toggle="collapse"
+								<button class="btn btn-primary btn-sm float-right reportbtn-gap" type=x"button" data-toggle="collapse"
 								        data-target="#deliveryCollapse{{ loop.index }}" aria-expanded="false"
-								        aria-controls="deliveryCollapse{{ loop.index }}" style="margin-bottom:3px; margin-right:3px">
+								        aria-controls="deliveryCollapse{{ loop.index }}">
 									Orders
 								</button>
-								<button id="{{ order.order_id.S }}" class="btn btn-primary btn-sm float-right" type="button"
+								<button id="{{ order.order_id.S }}_deliver" class="btn btn-primary btn-sm float-right reportbtn-gap" type="button"
 								        onclick="delivery('{{ order.order_id.S }}')">
 									Cancel
+								</button>
+								<button id="{{ order.order_id.S }}_delete" class="btn btn-primary btn-sm float-right reportbtn-gap" type="button"
+								        onclick="deleteItem('{{ order.order_id.S }}')">
+									Delete
 								</button>
 							</td>
 						</tr>

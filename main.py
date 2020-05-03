@@ -1385,11 +1385,19 @@ def detailed_orders():
 
     for order in orders['Items']:
         if order['status']['S'] == 'open':
-            data.append([order['name']['S'], order['phone']['S']])
-            
+            data.append([order['name']['S'],
+                         order['phone']['S'],
+                         f"{order['street']['S']}, {order['city']['S']}, {order['state']['S']} {order['zipCode']['N']}"])
+            for items in order['order_items']['L']:
+                data.append([items['M']['price']['N'],
+                             items['M']['qty']['N'],
+                             items['M']['meal_name']['S']])
+    
     si = io.StringIO()
     cw = csv.writer(si)
     cw.writerow(['Open Orders'])
+    for item in data:
+        cw.writerow(item)
     output = make_response(si.getvalue())
     output.headers["Content-Disposition"] = "attachment; filename=orders.csv"
     output.headers["Content-type"] = "text/csv"
@@ -1413,7 +1421,10 @@ def detailed_customers():
     
     for order in orders['Items']:
         if order['status']['S'] == 'open' and order['name']['S'] not in customers:
-            customers[order['name']['S']] = [str(len(customers) + 1), order['name']['S'], order['phone']['S'], order['email']['S'],
+            customers[order['name']['S']] = [str(len(customers) + 1),
+                                             order['name']['S'],
+                                             order['phone']['S'],
+                                             order['email']['S'],
                                              f"{order['street']['S']}, {order['city']['S']}, {order['state']['S']} {order['zipCode']['N']}"]
     
     si = io.StringIO()
