@@ -17,7 +17,15 @@
 		}
 
 		function deleteItem( order_id ) {
-
+			if ( confirm( 'Are you sure you want to delete?' ) ) {
+				$.ajax( {
+					type: 'POST',
+					url:  `/api/v1/meals/delete/${order_id}`,
+					success() {
+						$( `#${order_id}_delete` ).html( 'Deleted' );
+					}
+				} );
+			}
 		}
 	</script>
 	<link rel="stylesheet" type="text/css" href="{{ url_for('.static', filename='css/reportStyle.css' ) }}">
@@ -81,9 +89,7 @@
 							<button id="{{ order.order_id.S }}_deliver" class="btn btn-primary btn-sm float-right reportbtn-gap" type="button"
 							        onclick="delivery('{{ order.order_id.S }}')">Deliver</button>
 							<button id="{{ order.order_id.S }}_delete" class="btn btn-primary btn-sm float-right reportbtn-gap" type="button"
-							        onclick="deleteItem('{{ order.order_id.S }}')">
-								Delete
-							</button>
+							        onclick="deleteItem('{{ order.order_id.S }}')">Delete</button>
 						</td>
 					</tr>
 					</tbody>
@@ -194,9 +200,7 @@
 									Cancel
 								</button>
 								<button id="{{ order.order_id.S }}_delete" class="btn btn-primary btn-sm float-right reportbtn-gap" type="button"
-								        onclick="deleteItem('{{ order.order_id.S }}')">
-									Delete
-								</button>
+								        onclick="deleteItem('{{ order.order_id.S }}')">Delete</button>
 							</td>
 						</tr>
 						</tbody>
