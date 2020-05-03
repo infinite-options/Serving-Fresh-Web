@@ -1385,8 +1385,7 @@ def detailed_orders():
 
     for order in orders['Items']:
         if order['status']['S'] == 'open':
-            data.append([order['name']['S'], order['phone']['S'],
-                         f"{order['street']['S']}, {order['city']['S']}, {order['state']['S']} {order['zipCode']['N']}"])
+            data.append([order['name']['S'], order['phone']['S']])
             
     si = io.StringIO()
     cw = csv.writer(si)
