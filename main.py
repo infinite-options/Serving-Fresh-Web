@@ -114,15 +114,10 @@ def allowed_file(filename):
 # =======HELPER FUNCTIONS FOR DELETING AN IMAGE=============
 
 def delete_s3_img(bucket, key):
-    print('Inside delete_s3_img..')
-    print('bucket: ', bucket)
-    print('key: ', key)
-    
     try:
         delete_file = s3.delete_object(
             Bucket=bucket,
             Key=key)
-        print('delete_file : ', delete_file)
     
     except:
         print('Item cannot be deleted')
@@ -343,8 +338,6 @@ def register():
         
         photoPath = 'https://servingnow.s3-us-west-1.amazonaws.com/kitchen_imgs/landing-logo.png'
         
-        print('form.kitchenImage.data: ' + str(form.kitchenImage.data))
-        
         if form.kitchenImage.data:
             photo_key = 'kitchen_imgs/{}'.format(str(kitchen_id))
             photoPath = upload_s3_img(form.kitchenImage.data, BUCKET_NAME, photo_key)
@@ -381,11 +374,8 @@ def register():
                                         }
                                   )
         flash('Your account has been created! You are now able to log in.', 'success')  # python 3 format.
-        print('Account for ' + form.email.data + ' has been created')
         return redirect(url_for('login'))
-    
-    print(form.errors)
-    
+        
     return render_template('register.html', title='Register',
                            form=form)  # This is what happens if the submit is unsuccessful with errors highlighted
 
@@ -413,7 +403,6 @@ def registerCustomer():
                                    )
         flash("Thank you " + form.firstName.data + ' is now registered as a customer for Serving Now.',
               'success')  # python 3 format.
-        print('Account for ' + form.email.data + ' has been created')
         return redirect(url_for('home'))
     if login_session.get('representative'):
         form.representative.data = login_session['representative']
@@ -464,7 +453,6 @@ def kitchen(id):
                            ':val': {'BOOL': False}
                        }
                        )
-        print("set isOpen to false")
     
     for meal in allMeals:
         twelveHourTime = datetime.strptime(meal['created_at']['S'][11:16], '%H:%M')
@@ -587,7 +575,6 @@ def kitchenSettings(id):
                                 'close_time': {'S': form.deliveryCloseTimeSaturday.data.strftime('%H:%M')}}}]
         
         photoPath = kitchen['kitchen_image']['S']
-        print('form.kitchenImage.data: ' + str(form.kitchenImage.data))
         if form.kitchenImage.data:
             kitchen_id = login_session['user_id']
             photo_key = 'kitchen_imgs/{}'.format(str(kitchen_id))
@@ -650,8 +637,6 @@ def kitchenSettings(id):
         login_session['kitchen_name'] = form.kitchenName.data
         login_session['email'] = form.email.data.lower()
         
-        print(login_session['kitchen_name'])
-        print(form.kitchenName.data)
         flash('Your account has been updated!', 'success')
         return redirect(url_for('kitchenSettings', id=current_user.get_id()))
     elif request.method == 'GET':
@@ -761,7 +746,6 @@ def postMeal():
     itemsData = request.form.get('items')
     
     if name == None or price == None or photo == None or itemsData == None:
-        print('Meal details missing')
         return
     
     kitchen_id = current_user.get_id()
@@ -781,8 +765,6 @@ def postMeal():
         items.append(item)
     
     description = [{'M': i} for i in items]
-    
-    print(description)
     
     # try:
     photo_key = 'meals_imgs/{}_{}'.format(str(kitchen_id), str(meal_id))
@@ -815,7 +797,6 @@ def postMeal():
                              }
                              )
     
-    print('Inside POST API')
     # print('kitchen:' + kitchen)
     # Technical debt that needs to be solved
     
@@ -853,7 +834,6 @@ def renewPastMeals():
 @login_required
 def renewIndvPastMeal(id):
     todays_datetime = datetime.now(tz=timezone('US/Pacific')).strftime('%Y-%m-%dT%H:%M:%S')
-    print(str(id))
     
     try:
         update_meal = db.update_item(TableName='meals',
@@ -958,7 +938,6 @@ def adminreportFilterStatus(order_id, status):
             ':val2': {'S': order_id}
         }
     )
-    print(order_id)
     
     return redirect(url_for('adminreport'))
 
@@ -1400,7 +1379,6 @@ def deliver_order(order_id):
     if 'kitchen_name' not in login_session:
         return redirect(url_for('index'))
     
-    print(order_id, request.values['status'])
     update_meal = db.update_item(TableName='meal_orders',
                                  Key={'order_id': {'S': order_id}},
                                  UpdateExpression='SET #attr1 = :st',
@@ -1533,18 +1511,14 @@ def delete(meal_id):
     
     # input argument validation
     response = {}
-    print('Inside delete..')
-    print('meal_id', meal_id)
     
     try:
         # Get kitchen id and delete from s3 bucket first
         response = db.get_item(TableName='meals', Key={'meal_id': {'S': str(meal_id)}})
         
         kitchen_id = response['Item']['kitchen_id']['S']
-        print('kitchen_id : ', kitchen_id)
         
         photo_key = 'meals_imgs/{}_{}'.format(str(kitchen_id), str(meal_id))
-        print('photo_key : ', photo_key)
         
         # delete from meals table
         deleted_meal = db.delete_item(TableName='meals',
@@ -1586,7 +1560,6 @@ def favorite(meal_id):
     
     # input argument validation
     response = {}
-    print('Inside favorite..')
     
     # get meal from meals table
     meal = db.scan(TableName='meals',
