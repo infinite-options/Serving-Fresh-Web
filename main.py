@@ -1373,15 +1373,28 @@ def deliver_order(order_id):
 def detailed_orders():
     if 'kitchen_name' not in login_session:
         return redirect(url_for('index'))
+    
+    orders = db.scan(TableName='meal_orders',
+                     FilterExpression='kitchen_id = :value',
+                     ExpressionAttributeValues={
+                         ':value': {'S': current_user.get_id()}
+                     }
+                     )
+    
+    data = []
 
-    # si = io.StringIO()
-    # cw = csv.writer(si)
-    # cw.writerows(csvList)
-    # output = make_response(si.getvalue())
-    # output.headers["Content-Disposition"] = "attachment; filename=orders.csv"
-    # output.headers["Content-type"] = "text/csv"
-    # return output
-    return 'test'
+    for order in orders['Items']:
+        if order['status']['S'] == 'open':
+            data.append([order['name']['S'], order['phone']['S'],
+                         f"{order['street']['S']}, {order['city']['S']}, {order['state']['S']} {order['zipCode']['N']}"])
+            
+    si = io.StringIO()
+    cw = csv.writer(si)
+    cw.writerow(['Open Orders'])
+    output = make_response(si.getvalue())
+    output.headers["Content-Disposition"] = "attachment; filename=orders.csv"
+    output.headers["Content-type"] = "text/csv"
+    return output
 
 
 @app.route('/api/v1/kitchen/customers')
@@ -1390,8 +1403,29 @@ def detailed_customers():
     if 'kitchen_name' not in login_session:
         return redirect(url_for('index'))
     
-    print('customers', current_user.get_id())
-    return 'test'
+    orders = db.scan(TableName='meal_orders',
+                     FilterExpression='kitchen_id = :value',
+                     ExpressionAttributeValues={
+                         ':value': {'S': current_user.get_id()}
+                     }
+                     )
+    
+    customers = {}
+    
+    for order in orders['Items']:
+        if order['status']['S'] == 'open' and order['name']['S'] not in customers:
+            customers[order['name']['S']] = [str(len(customers) + 1), order['name']['S'], order['phone']['S'], order['email']['S'],
+                                             f"{order['street']['S']}, {order['city']['S']}, {order['state']['S']} {order['zipCode']['N']}"]
+    
+    si = io.StringIO()
+    cw = csv.writer(si)
+    cw.writerow(['#', 'Name', 'Phone', 'Email', 'Address'])
+    for customer in customers.values():
+        cw.writerow(customer)
+    output = make_response(si.getvalue())
+    output.headers["Content-Disposition"] = "attachment; filename=customers.csv"
+    output.headers["Content-type"] = "text/csv"
+    return output
 
 
 def closeKitchen(kitchen_id):

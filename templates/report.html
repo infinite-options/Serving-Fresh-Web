@@ -55,12 +55,11 @@
 						<td class="orderbtn-col align-middle">
 							<button class="btn btn-primary btn-sm float-right" type=x"button" data-toggle="collapse"
 							        data-target="#openCollapse{{ loop.index }}" aria-expanded="false"
-							        aria-controls="collapseExample" style="margin-bottom:3px">
+							        aria-controls="collapseExample" style="margin-bottom:3px; margin-right:3px">
 								Orders
 							</button>
 							<button id="{{ order.order_id.S }}" class="btn btn-primary btn-sm float-right" type="button"
-							        onclick="delivery('{{ order.order_id.S }}')">Deliver
-							</button>
+							        onclick="delivery('{{ order.order_id.S }}')">Deliver</button>
 						</td>
 					</tr>
 					</tbody>
@@ -163,11 +162,12 @@
 							<td class="orderbtn-col align-middle">
 								<button class="btn btn-primary btn-sm float-right" type=x"button" data-toggle="collapse"
 								        data-target="#deliveryCollapse{{ loop.index }}" aria-expanded="false"
-								        aria-controls="deliveryCollapse{{ loop.index }}" style="margin-bottom:3px">
+								        aria-controls="deliveryCollapse{{ loop.index }}" style="margin-bottom:3px; margin-right:3px">
 									Orders
 								</button>
 								<button id="{{ order.order_id.S }}" class="btn btn-primary btn-sm float-right" type="button"
-								        onclick="delivery('{{ order.order_id.S }}')">Cancel
+								        onclick="delivery('{{ order.order_id.S }}')">
+									Cancel
 								</button>
 							</td>
 						</tr>
