@@ -13,3 +13,4 @@ pytz
 wtforms
 requests
 redis
+email_validator

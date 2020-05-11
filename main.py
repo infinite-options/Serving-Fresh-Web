@@ -17,7 +17,7 @@ from flask import session as login_session
 from flask_caching import Cache
 from flask_cors import CORS, cross_origin
 from flask_login import LoginManager, login_required, current_user, UserMixin, login_user, logout_user
-from flask_mail import Mail
+from flask_mail import Mail, Message
 from pytz import timezone
 from werkzeug.exceptions import BadRequest
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -375,7 +375,7 @@ def register():
                                   )
         flash('Your account has been created! You are now able to log in.', 'success')  # python 3 format.
         return redirect(url_for('login'))
-        
+    
     return render_template('register.html', title='Register',
                            form=form)  # This is what happens if the submit is unsuccessful with errors highlighted
 
@@ -396,9 +396,7 @@ def registerCustomer():
                                          'first_name': {'S': form.firstName.data},
                                          'last_name': {'S': form.lastName.data},
                                          'phone_number': {'S': form.phoneNumber.data},
-                                         'email': {'S': form.email.data.lower()},
-                                         'beta_tester': {'BOOL': strToBool(form.futureCustomer.data)},
-                                         'future_customer': {'BOOL': strToBool(form.futureCustomer.data)},
+                                         'email': {'S': form.email.data.lower()}
                                          }
                                    )
         flash("Thank you " + form.firstName.data + ' is now registered as a customer for Serving Now.',
@@ -600,6 +598,7 @@ def kitchenSettings(id):
                                              kitchen_name = :kn, \
                                              last_name = :ln, \
                                              open_time = :ot, \
+                                             password = :p, \
                                              phone_number = :pn, \
                                              pickup = :pi, \
                                              reusable = :r, \
@@ -624,7 +623,7 @@ def kitchenSettings(id):
                            ':kn': {'S': form.kitchenName.data},
                            ':ln': {'S': form.lastName.data},
                            ':ot': {'S': form.acceptingOpenTimeMonday.data.strftime('%H:%M')},
-                           # ':p': {'S': generate_password_hash(form.password.data)},
+                           ':p': {'S': generate_password_hash(form.password.data)},
                            ':pn': {'S': form.phoneNumber.data},
                            ':pi': {'BOOL': pickup},
                            ':r': {'BOOL': reusable},
@@ -1276,16 +1275,17 @@ def report():
                      FilterExpression='kitchen_id = :value',
                      ExpressionAttributeValues={
                          ':value': {'S': current_user.get_id()}
-                     }
-                     )
+                     })
     
     allMeals = db.scan(
         TableName='meals',
         FilterExpression='kitchen_id = :val',
         ExpressionAttributeValues={
             ':val': {'S': login_session['user_id']},
-        }
-    )
+        })
+    
+    refunds = db.scan(TableName='refund')
+    refunds = {refund['email']['S']: True for refund in refunds['Items']}
     
     meals = {}
     previousMeals = {}
@@ -1365,6 +1365,7 @@ def report():
                            id=login_session['user_id'],
                            openOrders=openOrders,
                            deliveredOrders=deliveredOrders,
+                           refunds=refunds,
                            totalPotentialRevenue=locale.currency(totalPotentialRevenue),
                            totalDeliveredRevenue=locale.currency(totalDeliveredRevenue),
                            todaysMeals=todaysMenu,
@@ -1454,18 +1455,17 @@ def detailed_customers():
                      FilterExpression='kitchen_id = :value',
                      ExpressionAttributeValues={
                          ':value': {'S': current_user.get_id()}
-                     }
-                     )
+                     })
     
     customers = {}
     
     for order in orders['Items']:
-        if order['status']['S'] == 'open' and order['name']['S'] not in customers:
-            customers[order['name']['S']] = [str(len(customers) + 1),
-                                             order['name']['S'],
-                                             order['phone']['S'],
-                                             order['email']['S'],
-                                             f"{order['street']['S']}, {order['city']['S']}, {order['state']['S']} {order['zipCode']['N']}"]
+        if order['status']['S'] == 'open' and order['email']['S'] not in customers:
+            customers[order['email']['S']] = [str(len(customers) + 1),
+                                              order['name']['S'],
+                                              order['phone']['S'],
+                                              order['email']['S'],
+                                              f"{order['street']['S']}, {order['city']['S']}, {order['state']['S']} {order['zipCode']['N']}"]
     
     si = io.StringIO()
     cw = csv.writer(si)
@@ -1476,6 +1476,77 @@ def detailed_customers():
     output.headers["Content-Disposition"] = "attachment; filename=customers.csv"
     output.headers["Content-type"] = "text/csv"
     return output
+
+
+@app.route('/api/v1/kitchen/routes')
+@login_required
+def detailed_routes():
+    if 'kitchen_name' not in login_session:
+        return redirect(url_for('index'))
+    
+    orders = db.scan(TableName='meal_orders',
+                     FilterExpression='kitchen_id = :value',
+                     ExpressionAttributeValues={
+                         ':value': {'S': current_user.get_id()}
+                     }
+                     )
+    
+    customers = {}
+    
+    for order in orders['Items']:
+        if order['status']['S'] == 'open' and order['name']['S'] not in customers:
+            customers[order['name']['S']] = True
+            
+            name = order['name']['S'].split()
+            db.put_item(TableName='delivery_orders',
+                        Item={
+                            'start_date': {'S': 'none'},
+                            'delivery_first_name': {'S': name[0]},
+                            'delivery_last_name': {'S': name[1] if len(name) > 1 else ''},
+                            'delivery_email': {'S': order['email']['S']},
+                            'delivery_instructions': {'S': ''},
+                            'delivery_address': {'S': order['street']['S']},
+                            'delivery_address_': {'S': ''},
+                            'delivery_city': {'S': order['city']['S']},
+                            'delivery_state': {'S': order['state']['S']},
+                            'delivery_zip': {'S': order['zipCode']['N']},
+                            'delivery_region': {'S': ''},
+                            'delivery_long': {'S': ''},
+                            'delivery_lat': {'S': ''},
+                            'delivery_day': {'S': ''}})
+    
+    response = {'message': 'Request successful'}
+    return response, 200
+
+
+@app.route('/api/v1/kitchen/reports')
+@login_required
+def send_reports():
+    if 'kitchen_name' not in login_session:
+        return redirect(url_for('index'))
+    
+    msg = Message("Hello",
+                  sender="from@example.com",
+                  recipients=["support@servingnow.me"])
+    # mail.send(msg)
+    
+    response = {'message': 'Request successful'}
+    return response, 200
+
+
+@app.route('/api/v1/kitchen/refund')
+@login_required
+def refund():
+    if 'kitchen_name' not in login_session:
+        return redirect(url_for('index'))
+    
+    msg = Message("Hello",
+                  sender="from@example.com",
+                  recipients=["support@servingnow.me"])
+    # mail.send(msg)
+    
+    response = {'message': 'Request successful'}
+    return response, 200
 
 
 def closeKitchen(kitchen_id):

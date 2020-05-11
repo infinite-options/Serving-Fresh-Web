@@ -103,39 +103,9 @@
               {{ form.phoneNumber(class="form-control form-control-lg") }}
             {% endif %}
           </div>
-          <div class="form-group">
-            *{{ form.betaTester.label() }}
-            {% if form.betaTester.errors %}
-              {{ form.betaTester(class="pl-0", style="list-style: none;") }}
-              <div style="display: block;" class="invalid-feedback">
-                {% for error in form.betaTester.errors %}
-                  {% if loop.index != 1 %}
-                    <span>{{ error }}</span>
-                  {% endif %}
-                {% endfor %}
-              </div>
-            {% else %}
-              {{ form.betaTester(class="pl-0", style="list-style: none;") }}
-            {% endif %}
-          </div>
-          <div class="form-group">
-            *{{ form.futureCustomer.label() }}
-            {% if form.futureCustomer.errors %}
-              {{ form.futureCustomer(class="pl-0", style="list-style: none;") }}
-              <div style="display: block;" class="invalid-feedback">
-                {% for error in form.futureCustomer.errors %}
-                  {% if loop.index != 1 %}
-                    <span>{{ error }}</span>
-                  {% endif %}
-                {% endfor %}
-              </div>
-            {% else %}
-              {{ form.futureCustomer(class="pl-0", style="list-style: none;") }}
-            {% endif %}
-          </div>
         </fieldset>
         <p>
-          *By clicking Submit you are agreeing to recieve emails and text messages from Serving Now.
+          *By clicking Submit you are agreeing to receive emails and text messages from Serving Now.
         </p>
         <div class="form-group">
           {{ form.submit(class="btn btn-info") }}

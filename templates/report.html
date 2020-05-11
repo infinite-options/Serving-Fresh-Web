@@ -3,6 +3,26 @@
 {% block content %}
 	<script src="ordermeal.js"></script>
 	<script>
+		function routeDetails() {
+			$.ajax( {
+				type: 'POST',
+				url:  '/api/v1/kitchen/routes',
+				success() {
+					alert( 'Routes have been created' );
+				}
+			} );
+		}
+
+		function sendReports() {
+			$.ajax( {
+				type: 'POST',
+				url:  '/api/v1/kitchen/reports',
+				success() {
+					alert( 'Reports have been emailed' );
+				}
+			} );
+		}
+
 		function delivery( order_id ) {
 			const button = $( `#${order_id}_deliver` );
 
@@ -14,6 +34,10 @@
 					button.html( button.text() === 'Deliver' ? 'Cancel' : 'Deliver' );
 				}
 			} );
+		}
+
+		function refund( order_id, item ) {
+
 		}
 
 		function deleteItem( order_id ) {
@@ -40,17 +64,30 @@
 				{% if not openOrders %}
 					<p class="lead text-secondary ml-4">You currently have no orders placed.</p>
 				{% else %}
-					<a href="/api/v1/kitchen/orders" download="orders.csv">
-						<button class="btn btn-primary" type="submit">Order Details</button>
-					</a>
-					<a href="/api/v1/kitchen/customers" download="customers.csv">
-						<button class="btn btn-primary" type="submit">Customer Details</button>
-					</a>
+					<div>
+						<a href="/api/v1/kitchen/orders" download="orders.csv">
+							<button class="btn btn-primary" type="submit">
+								Order Details
+							</button>
+						</a>
+						<a href="/api/v1/kitchen/customers" download="customers.csv">
+							<button class="btn btn-primary" type="submit">
+								Customer Details
+							</button>
+						</a>
+						<button class="btn btn-primary" onclick="routeDetails()">
+							Route Details
+						</button>
+						<button class="btn btn-primary float-right" onclick="sendReports()">
+							Send Reports
+						</button>
+					</div>
 					<div class="border-top ml-4 p-2 mb-1 mt-1">
 						<table class='table table-borderless mb-0'>
 							<thead>
 							<th class="time-col align-middle table-borderless" scope="col">Time</th>
 							<th class="name-col align-middle table-borderless" scope="col">Name</th>
+							<th class="email-col align-middle table-borderless" scope="col">Email</th>
 							<th class="address-col align-middle table-borderless" scope="col">Address</th>
 							<th class="phone-col align-middle table-borderless" scope="col">Phone</th>
 							<th class="number-col align-middle table-borderless" scope="col">Total ($)</th>
@@ -73,6 +110,7 @@
 					<tr>
 						<td class="time-col align-middle table-borderless" scope="col">{{ order.order_time }}</td>
 						<th class="name-col align-middle table-borderless" scope="col">{{ order.name.S }}</th>
+						<td class="email-col align-middle table-borderless" scope="col">{{ order.email.S }}</td>
 						<td class="address-col align-middle table-borderless">
 							<div> {{ order.street.S }} </div>
 							<div> {{ order.city.S }}, {{ order.state.S }} {{ order.zipCode.N }} </div>
@@ -81,14 +119,16 @@
 						<td class="number-col align-middle table-borderless">{{ order.totalAmount.N }}</td>
 						<td class="number-col align-middle table-borderless">{{ order.order_items.L|length }}</td>
 						<td class="orderbtn-col align-middle">
-							<button class="btn btn-primary btn-sm float-right reportbtn-gap" type=x"button" data-toggle="collapse"
+							<button class="btn btn-primary btn-sm reportbtn-gap" type=x"button" data-toggle="collapse"
 							        data-target="#openCollapse{{ loop.index }}" aria-expanded="false"
 							        aria-controls="collapseExample">
 								Orders
 							</button>
-							<button id="{{ order.order_id.S }}_deliver" class="btn btn-secondary btn-sm float-right reportbtn-gap" type="button"
+							<button id="{{ order.order_id.S }}_deliver" class="btn btn-secondary btn-sm reportbtn-gap" type="button"
 							        onclick="delivery('{{ order.order_id.S }}')">Deliver</button>
-							<button id="{{ order.order_id.S }}_delete" class="btn btn-danger btn-sm float-right reportbtn-gap" type="button"
+							<button id="{{ order.order_id.S }}_refund" class="btn btn-info btn-sm reportbtn-gap" type="button"
+							        onclick="refund('{{ order.order_id.S }}')" {{ '' if order.email.S in refunds else 'disabled' }}>Refund</button>
+							<button id="{{ order.order_id.S }}_delete" class="btn btn-danger btn-sm reportbtn-gap" type="button"
 							        onclick="deleteItem('{{ order.order_id.S }}')">Delete</button>
 						</td>
 					</tr>
@@ -101,14 +141,14 @@
 								<div class="border border-gray mb-2 mt-2 order-item-box">
 									<img src="{{ item.photo.S }}" class="card-img-top float-left" style="max-width:190px;
 									height:120px">
-									<span class="align-top list-inline-item float-left ml-2">
+									<span class="align-top list-inline-item float-left ml-2 w-50">
                            <p class="item-title display-4"> {{ item.price }} {{ item.name }} </p>
                            <p class="text-left"> Quantity: {{ item.qty }} </p>
                            <p class="text-left"> Revenue: {{ item.revenue }} </p>
                          </span>
-									<!-- <div class="form-group align-middle float-right m-1">
-									  <textarea class="form-control notes-box" rows="7" id="order_notes"></textarea>
-									</div> -->
+									<div class="form-group align-middle float-right m-1">
+										<button class="btn btn-info btn-sm reportbtn-gap" type="button" {{ '' if order.email.S in refunds else 'disabled' }}>Refund</button>
+									</div>
 								</div>
 							{% else %}
 								{% if not item.photo %}
@@ -170,13 +210,14 @@
 						<span class="display-4 page-header-title">Delivered Orders</span>
 					</div>
 					{% if not deliveredOrders %}
-						<p class="lead text-secondary ml-4">You currently have no orders that have been delievered.</p>
+						<p class="lead text-secondary ml-4">You currently have no orders that have been delivered.</p>
 					{% else %}
 						<div class="border-top ml-4 p-2 mb-1 mt-1">
 							<table class='table table-borderless mb-0'>
 								<thead>
 								<th class="time-col align-middle table-borderless" scope="col">Time</th>
 								<th class="name-col align-middle table-borderless" scope="col">Name</th>
+								<th class="email-col align-middle table-borderless" scope="col">Email</th>
 								<th class="address-col align-middle table-borderless" scope="col">Address</th>
 								<th class="phone-col align-middle table-borderless" scope="col">Phone</th>
 								<th class="number-col align-middle table-borderless" scope="col">Total ($)</th>
@@ -198,6 +239,7 @@
 						<tr>
 							<td class="time-col align-middle table-borderless" scope="col">{{ order.order_time }}</td>
 							<th class="name-col align-middle table-borderless" scope="col">{{ order.name.S }}</th>
+							<td class="email-col align-middle table-borderless" scope="col">{{ order.email.S }}</td>
 							<td class="address-col align-middle table-borderless">
 								<div> {{ order.street.S }} </div>
 								<div> {{ order.city.S }}, {{ order.state.S }} {{ order.zipCode.N }} </div>
@@ -206,16 +248,18 @@
 							<td class="number-col align-middle table-borderless">{{ order.totalAmount.N }}</td>
 							<td class="number-col align-middle table-borderless">{{ order.order_items.L|length }}</td>
 							<td class="orderbtn-col align-middle">
-								<button class="btn btn-primary btn-sm float-right reportbtn-gap" type=x"button" data-toggle="collapse"
+								<button class="btn btn-primary btn-sm reportbtn-gap" type=x"button" data-toggle="collapse"
 								        data-target="#deliveryCollapse{{ loop.index }}" aria-expanded="false"
 								        aria-controls="deliveryCollapse{{ loop.index }}">
 									Orders
 								</button>
-								<button id="{{ order.order_id.S }}_deliver" class="btn btn-secondary btn-sm float-right reportbtn-gap" type="button"
+								<button id="{{ order.order_id.S }}_deliver" class="btn btn-secondary btn-sm reportbtn-gap" type="button"
 								        onclick="delivery('{{ order.order_id.S }}')">
 									Cancel
 								</button>
-								<button id="{{ order.order_id.S }}_delete" class="btn btn-danger btn-sm float-right reportbtn-gap" type="button"
+								<button id="{{ order.order_id.S }}_refund" class="btn btn-info btn-sm reportbtn-gap" type="button"
+								        onclick="refund('{{ order.order_id.S }}')" {{ '' if order.email.S in refunds else 'disabled' }}>Refund</button>
+								<button id="{{ order.order_id.S }}_delete" class="btn btn-danger btn-sm reportbtn-gap" type="button"
 								        onclick="deleteItem('{{ order.order_id.S }}')">Delete</button>
 							</td>
 						</tr>

@@ -306,7 +306,7 @@ class LoginForm(FlaskForm):
         return True
 
 class CustomerForm(FlaskForm):
-    representative = StringField('Representative')
+    representative = StringField('Referred By')
     firstName = StringField('First Name', validators=[DataRequired()])
     lastName = StringField('Last Name', validators=[DataRequired()])
     email = StringField('Email', validators=[DataRequired(), Email()])
