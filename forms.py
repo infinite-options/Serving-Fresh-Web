@@ -413,8 +413,8 @@ class UpdateAccountForm(FlaskForm): # create a Registration Form class.  Below a
     kitchenImage = FileField('Update Profile Picture', validators=[FileAllowed(['jpg', 'png'])])
     zipcode = StringField('Zipcode', validators=[DataRequired()])
     submit = SubmitField('Update') # SubmitField must allow Signup as its button Label.  Not sure yet where the action goes
-    # password = PasswordField('New Password', validators=[DataRequired()])
-    # verifyPassword = PasswordField('Confirm New Password', validators=[DataRequired(), EqualTo('password')])
+    password = PasswordField('New Password', validators=[DataRequired()])
+    verifyPassword = PasswordField('Confirm New Password', validators=[DataRequired(), EqualTo('password')])
     # pickup = BooleanField('Pickup', validators=[DataRequired()])
     # delivery = BooleanField('Delivery', validators=[DataRequired()])
     # reusable = BooleanField('Reusable', validators=[DataRequired()])
