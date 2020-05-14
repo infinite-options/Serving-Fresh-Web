@@ -33,9 +33,9 @@ login_manager = LoginManager(app)
 secret_key = 'app_secret_key'
 
 app.config['SECRET_KEY'] = secret_key
-app.config['MAIL_USERNAME'] = 'infiniteoptions.meals@gmail.com'
-app.config['MAIL_PASSWORD'] = 'annApurna'
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_USERNAME'] = 'orders@servingnow.me'
+app.config['MAIL_PASSWORD'] = 'NewOrders1'
+app.config['MAIL_SERVER'] = 'smtp.mydomain.com'
 app.config['MAIL_PORT'] = 465
 app.config['MAIL_USE_TLS'] = False
 app.config['MAIL_USE_SSL'] = True
@@ -66,7 +66,7 @@ API_BASE_URL = 'https://phaqvwjbw6.execute-api.us-west-1.amazonaws.com/dev'
 # API_BASE_URL = 'http://localhost:5000'
 
 # allowed extensions for uploading a profile photo file
-ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg'])
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 
 
 # No caching at all for API endpoints.
@@ -147,9 +147,7 @@ def unauthorized_callback():
     return redirect(url_for('login'))
 
 
-@app.route('/')
-def index():
-    return redirect(url_for('home'))
+import routes.index
 
 
 @app.route('/payment/<string:order_id>/<string:total>')
@@ -212,8 +210,7 @@ def login():
                             KeyConditionExpression='email = :val',
                             ExpressionAttributeValues={
                                 ':val': {'S': email}
-                            }
-                            )
+                            })
             
             if user.get('Count') == 0:
                 return render_template('login.html', title='Login', form=form)
@@ -1409,12 +1406,7 @@ def delete_order(order_id):
     return response, 200
 
 
-@app.route('/api/v1/kitchen/orders')
-@login_required
-def detailed_orders():
-    if 'kitchen_name' not in login_session:
-        return redirect(url_for('index'))
-    
+def csv_orders():
     orders = db.scan(TableName='meal_orders',
                      FilterExpression='kitchen_id = :value',
                      ExpressionAttributeValues={
@@ -1439,18 +1431,25 @@ def detailed_orders():
     cw.writerow(['Open Orders'])
     for item in data:
         cw.writerow(item)
-    output = make_response(si.getvalue())
+    
+    return si.getvalue()
+
+
+@app.route('/api/v1/kitchen/orders')
+@login_required
+def detailed_orders():
+    if 'kitchen_name' not in login_session:
+        return redirect(url_for('index'))
+    
+    orders = csv_orders()
+    
+    output = make_response(orders)
     output.headers["Content-Disposition"] = "attachment; filename=orders.csv"
     output.headers["Content-type"] = "text/csv"
     return output
 
 
-@app.route('/api/v1/kitchen/customers')
-@login_required
-def detailed_customers():
-    if 'kitchen_name' not in login_session:
-        return redirect(url_for('index'))
-    
+def csv_customers():
     orders = db.scan(TableName='meal_orders',
                      FilterExpression='kitchen_id = :value',
                      ExpressionAttributeValues={
@@ -1472,45 +1471,61 @@ def detailed_customers():
     cw.writerow(['#', 'Name', 'Phone', 'Email', 'Address'])
     for customer in customers.values():
         cw.writerow(customer)
-    output = make_response(si.getvalue())
+    return si.getvalue()
+
+
+@app.route('/api/v1/kitchen/customers')
+@login_required
+def detailed_customers():
+    if 'kitchen_name' not in login_session:
+        return redirect(url_for('index'))
+    
+    customers = csv_customers()
+    
+    output = make_response(customers)
     output.headers["Content-Disposition"] = "attachment; filename=customers.csv"
     output.headers["Content-type"] = "text/csv"
     return output
 
 
-@app.route('/api/v1/kitchen/routes')
-@login_required
+@app.route('/api/v1/kitchen/routes', methods=['POST'])
 def detailed_routes():
     if 'kitchen_name' not in login_session:
         return redirect(url_for('index'))
+    
+    delivery = db.scan(TableName='delivery_orders')
+    for item in delivery['Items']:
+        db.delete_item(TableName='delivery_orders',
+                       Key={'delivery_id': {'N': item['delivery_id']['N']}})
     
     orders = db.scan(TableName='meal_orders',
                      FilterExpression='kitchen_id = :value',
                      ExpressionAttributeValues={
                          ':value': {'S': current_user.get_id()}
-                     }
-                     )
+                     })
     
     customers = {}
     
-    for order in orders['Items']:
+    for i, order in enumerate(orders['Items']):
         if order['status']['S'] == 'open' and order['name']['S'] not in customers:
             customers[order['name']['S']] = True
             
             name = order['name']['S'].split()
             db.put_item(TableName='delivery_orders',
                         Item={
-                            'start_date': {'S': 'none'},
+                            'delivery_id': {'N': str(i)},
+                            'start_date': {'S': order['created_at']['S']},
                             'delivery_first_name': {'S': name[0]},
                             'delivery_last_name': {'S': name[1] if len(name) > 1 else ''},
                             'delivery_email': {'S': order['email']['S']},
+                            'delivery_phone': {'S': order['phone']['S']},
                             'delivery_instructions': {'S': ''},
                             'delivery_address': {'S': order['street']['S']},
-                            'delivery_address_': {'S': ''},
+                            'delivery_address_unit': {'S': ''},
                             'delivery_city': {'S': order['city']['S']},
                             'delivery_state': {'S': order['state']['S']},
                             'delivery_zip': {'S': order['zipCode']['N']},
-                            'delivery_region': {'S': ''},
+                            'delivery_region': {'S': 'US'},
                             'delivery_long': {'S': ''},
                             'delivery_lat': {'S': ''},
                             'delivery_day': {'S': ''}})
@@ -1519,30 +1534,32 @@ def detailed_routes():
     return response, 200
 
 
-@app.route('/api/v1/kitchen/reports')
+@app.route('/api/v1/kitchen/reports', methods=['POST'])
 @login_required
 def send_reports():
     if 'kitchen_name' not in login_session:
         return redirect(url_for('index'))
     
-    msg = Message("Hello",
-                  sender="from@example.com",
-                  recipients=["support@servingnow.me"])
-    # mail.send(msg)
+    msg = Message("Serving Now Reports",
+                  sender="support@servingnow.me",
+                  recipients=["support@servingnow.me", login_session['email']])
+    msg.attach('orders.csv', 'text/csv', csv_orders())
+    msg.attach('customers.csv', 'text/csv', csv_customers())
+    mail.send(msg)
     
     response = {'message': 'Request successful'}
     return response, 200
 
 
-@app.route('/api/v1/kitchen/refund')
+@app.route('/api/v1/kitchen/refund/<string:order_id>', methods=['POST'])
 @login_required
-def refund():
+def refund(order_id):
     if 'kitchen_name' not in login_session:
         return redirect(url_for('index'))
     
-    msg = Message("Hello",
-                  sender="from@example.com",
-                  recipients=["support@servingnow.me"])
+    # msg = Message("Serving Now Refund",
+    #               sender="support@servingnow.me",
+    #               recipients=[])
     # mail.send(msg)
     
     response = {'message': 'Request successful'}

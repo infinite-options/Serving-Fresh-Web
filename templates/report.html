@@ -36,8 +36,15 @@
 			} );
 		}
 
-		function refund( order_id, item ) {
-
+		function refund( order_id, cost ) {
+			$.ajax( {
+				type: 'POST',
+				url:  `/api/v1/kitchen/refund/${order_id}`,
+				data: { cost },
+				success() {
+					alert( 'Refund code have been emailed' );
+				}
+			} );
 		}
 
 		function deleteItem( order_id ) {
