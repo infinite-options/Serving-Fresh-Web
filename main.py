@@ -147,7 +147,9 @@ def unauthorized_callback():
     return redirect(url_for('login'))
 
 
-import routes.index
+@app.route('/')
+def index():
+    return redirect(url_for('home'))
 
 
 @app.route('/payment/<string:order_id>/<string:total>')
