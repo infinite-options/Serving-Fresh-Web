@@ -1490,6 +1490,46 @@ def detailed_customers():
     return output
 
 
+def csv_table():
+    meals = db.scan(TableName='meals',
+                    FilterExpression='kitchen_id = :value',
+                    ExpressionAttributeValues={
+                        ':value': {'S': current_user.get_id()}
+                    })
+    
+    orders = db.scan(TableName='meal_orders',
+                     FilterExpression='kitchen_id = :value',
+                     ExpressionAttributeValues={
+                         ':value': {'S': current_user.get_id()}
+                     })
+    
+    meals = [meal['meal_name']['S'] for meal in meals['Items']]
+    
+    si = io.StringIO()
+    cw = csv.DictWriter(si, ['Name'] + meals)
+    cw.writeheader()
+    for order in orders['Items']:
+        if order['status']['S'] == 'open':
+            items = {item['M']['meal_name']['S']: item['M']['qty']['N'] for item in order['order_items']['L']}
+            items['Name'] = order['name']['S']
+            cw.writerow(items)
+    return si.getvalue()
+
+
+@app.route('/api/v1/kitchen/table')
+@login_required
+def detailed_table():
+    if 'kitchen_name' not in login_session:
+        return redirect(url_for('index'))
+    
+    table = csv_table()
+    
+    output = make_response(table)
+    output.headers["Content-Disposition"] = "attachment; filename=table.csv"
+    output.headers["Content-type"] = "text/csv"
+    return output
+
+
 @app.route('/api/v1/kitchen/routes', methods=['POST'])
 def detailed_routes():
     if 'kitchen_name' not in login_session:
