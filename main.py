@@ -1413,8 +1413,7 @@ def csv_orders():
                      FilterExpression='kitchen_id = :value',
                      ExpressionAttributeValues={
                          ':value': {'S': current_user.get_id()}
-                     }
-                     )
+                     })
     
     data = []
     
@@ -1422,7 +1421,11 @@ def csv_orders():
         if order['status']['S'] == 'open':
             data.append([order['name']['S'],
                          order['phone']['S'],
-                         f"{order['street']['S']}, {order['city']['S']}, {order['state']['S']} {order['zipCode']['N']}"])
+                         order['email']['S'],
+                         order['street']['S'],
+                         order['city']['S'],
+                         order['state']['S'],
+                         order['zipCode']['N']])
             for items in order['order_items']['L']:
                 data.append([items['M']['price']['N'],
                              items['M']['qty']['N'],
@@ -1466,11 +1469,14 @@ def csv_customers():
                                               order['name']['S'],
                                               order['phone']['S'],
                                               order['email']['S'],
-                                              f"{order['street']['S']}, {order['city']['S']}, {order['state']['S']} {order['zipCode']['N']}"]
+                                              order['street']['S'],
+                                              order['city']['S'],
+                                              order['state']['S'],
+                                              order['zipCode']['N']]
     
     si = io.StringIO()
     cw = csv.writer(si)
-    cw.writerow(['#', 'Name', 'Phone', 'Email', 'Address'])
+    cw.writerow(['#', 'Name', 'Phone', 'Email', 'Street', 'City', 'State',' ZipCode'])
     for customer in customers.values():
         cw.writerow(customer)
     return si.getvalue()
