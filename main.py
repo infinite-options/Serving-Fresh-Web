@@ -1476,7 +1476,7 @@ def csv_customers():
     
     si = io.StringIO()
     cw = csv.writer(si)
-    cw.writerow(['#', 'Name', 'Phone', 'Email', 'Street', 'City', 'State',' ZipCode'])
+    cw.writerow(['#', 'Name', 'Phone', 'Email', 'Street', 'City', 'State', ' ZipCode'])
     for customer in customers.values():
         cw.writerow(customer)
     return si.getvalue()
@@ -1512,12 +1512,14 @@ def csv_table():
     meals = [meal['meal_name']['S'] for meal in meals['Items']]
     
     si = io.StringIO()
-    cw = csv.DictWriter(si, ['Name'] + meals)
+    cw = csv.DictWriter(si, ['Name', 'Email', 'Phone'] + meals)
     cw.writeheader()
     for order in orders['Items']:
         if order['status']['S'] == 'open':
             items = {item['M']['meal_name']['S']: item['M']['qty']['N'] for item in order['order_items']['L']}
             items['Name'] = order['name']['S']
+            items['Email'] = order['email']['S']
+            items['Phone'] = order['phone']['S']
             cw.writerow(items)
     return si.getvalue()
 
