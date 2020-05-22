@@ -169,8 +169,7 @@ def paymentCancelled(order_id):
                             FilterExpression='order_id = :value',
                             ExpressionAttributeValues={
                                 ':value': {'S': order_id},
-                            }
-                            )
+                            })
     if deleted_order.get('Items') != []:
         if deleted_order['Items'][0]['status']['S'] == 'delivered':
             message = 'Sorry, your order has been delivered and cannot be cancelled.'
@@ -1387,8 +1386,27 @@ def deliver_order(order_id):
                                  },
                                  ExpressionAttributeValues={
                                      ':st': {'S': request.values['status']},
-                                 }
-                                 )
+                                 })
+    
+    response = {'message': 'Request successful'}
+    return response, 200
+
+
+@app.route('/api/v1/kitchen/copy/<string:order_id>', methods=['POST'])
+@login_required
+def copy(order_id):
+    if 'kitchen_name' not in login_session:
+        return redirect(url_for('index'))
+    
+    order = db.scan(TableName='meal_orders',
+                    FilterExpression='order_id = :value',
+                    ExpressionAttributeValues={
+                        ':value': {'S': order_id}
+                    })
+    order['Items'][0].update({'created_at': {'S': datetime.now().isoformat()[0:19]},
+                              'order_id': {'S': uuid.uuid4().hex}})
+    db.put_item(TableName='meal_orders',
+                Item=order['Items'][0])
     
     response = {'message': 'Request successful'}
     return response, 200
@@ -1401,8 +1419,8 @@ def delete_order(order_id):
         return redirect(url_for('index'))
     
     delete_meal = db.delete_item(TableName='meal_orders',
-                                 Key={'order_id': {'S': order_id}}
-                                 )
+                                 Key={'order_id': {'S': order_id}
+                                      })
     
     response = {'message': 'Request successful'}
     return response, 200
@@ -1419,7 +1437,9 @@ def csv_orders():
     
     for order in orders['Items']:
         if order['status']['S'] == 'open':
-            data.append([order['name']['S'],
+            name = order['name']['S'].split()
+            data.append([name[0],
+                         name[1] if len(name) > 1 else '',
                          order['phone']['S'],
                          order['email']['S'],
                          order['street']['S'],
@@ -1464,19 +1484,25 @@ def csv_customers():
     customers = {}
     
     for order in orders['Items']:
-        if order['status']['S'] == 'open' and order['email']['S'] not in customers:
-            customers[order['email']['S']] = [str(len(customers) + 1),
-                                              order['name']['S'],
-                                              order['phone']['S'],
-                                              order['email']['S'],
-                                              order['street']['S'],
-                                              order['city']['S'],
-                                              order['state']['S'],
-                                              order['zipCode']['N']]
+        if order['status']['S'] == 'open':
+            if order['email']['S'] not in customers:
+                name = order['name']['S'].split()
+                customers[order['email']['S']] = [str(len(customers) + 1),
+                                                  name[0],
+                                                  name[1] if len(name) > 1 else '',
+                                                  order['phone']['S'],
+                                                  order['email']['S'],
+                                                  order['street']['S'],
+                                                  order['city']['S'],
+                                                  order['state']['S'],
+                                                  order['zipCode']['N'],
+                                                  order['totalAmount']['N']]
+            else:
+                customers[order['email']['S']][9] += order['totalAmount']['N']
     
     si = io.StringIO()
     cw = csv.writer(si)
-    cw.writerow(['#', 'Name', 'Phone', 'Email', 'Street', 'City', 'State', ' ZipCode'])
+    cw.writerow(['#', 'First Name', 'Last Name', 'Phone', 'Email', 'Street', 'City', 'State', 'ZipCode', 'Total'])
     for customer in customers.values():
         cw.writerow(customer)
     return si.getvalue()
@@ -1509,18 +1535,20 @@ def csv_table():
                          ':value': {'S': current_user.get_id()}
                      })
     
-    meals = [meal['meal_name']['S'] for meal in meals['Items']]
+    meals = {meal['meal_name']['S']: 0 for meal in meals['Items']}
     
     si = io.StringIO()
-    cw = csv.DictWriter(si, ['Name', 'Email', 'Phone'] + meals)
+    cw = csv.DictWriter(si, ['Name', 'Email', 'Phone', 'Total'] + list(meals.keys()))
     cw.writeheader()
     for order in orders['Items']:
         if order['status']['S'] == 'open':
             items = {item['M']['meal_name']['S']: item['M']['qty']['N'] for item in order['order_items']['L']}
+            items['Total'] = sum(items.values())
             items['Name'] = order['name']['S']
             items['Email'] = order['email']['S']
             items['Phone'] = order['phone']['S']
             cw.writerow(items)
+    cw.writerow({'Name': 'Total', **meals})
     return si.getvalue()
 
 
@@ -1595,22 +1623,8 @@ def send_reports():
                   recipients=["support@servingnow.me", login_session['email']])
     msg.attach('orders.csv', 'text/csv', csv_orders())
     msg.attach('customers.csv', 'text/csv', csv_customers())
+    msg.attach('table.csv', 'text/csv', csv_table())
     mail.send(msg)
-    
-    response = {'message': 'Request successful'}
-    return response, 200
-
-
-@app.route('/api/v1/kitchen/refund/<string:order_id>', methods=['POST'])
-@login_required
-def refund(order_id):
-    if 'kitchen_name' not in login_session:
-        return redirect(url_for('index'))
-    
-    # msg = Message("Serving Now Refund",
-    #               sender="support@servingnow.me",
-    #               recipients=[])
-    # mail.send(msg)
     
     response = {'message': 'Request successful'}
     return response, 200

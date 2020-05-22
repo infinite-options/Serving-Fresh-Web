@@ -23,6 +23,17 @@
 			} );
 		}
 
+		function refund( order_id, cost ) {
+			$.ajax( {
+				type: 'POST',
+				url:  `/api/v1/kitchen/refund/${order_id}`,
+				data: { cost },
+				success() {
+					alert( 'Refund code has been emailed' );
+				}
+			} );
+		}
+
 		function delivery( order_id ) {
 			const button = $( `#${order_id}_deliver` );
 
@@ -36,13 +47,12 @@
 			} );
 		}
 
-		function refund( order_id, cost ) {
+		function copy( order_id ) {
 			$.ajax( {
 				type: 'POST',
-				url:  `/api/v1/kitchen/refund/${order_id}`,
-				data: { cost },
+				url:  `/api/v1/kitchen/copy/${order_id}`,
 				success() {
-					alert( 'Refund code have been emailed' );
+					alert( 'Refresh page to see changes' );
 				}
 			} );
 		}
@@ -138,8 +148,10 @@
 							</button>
 							<button id="{{ order.order_id.S }}_deliver" class="btn btn-secondary btn-sm reportbtn-gap" type="button"
 							        onclick="delivery('{{ order.order_id.S }}')">Deliver</button>
-							<button id="{{ order.order_id.S }}_refund" class="btn btn-info btn-sm reportbtn-gap" type="button"
-							        onclick="refund('{{ order.order_id.S }}')" {{ '' if order.email.S in refunds else 'disabled' }}>Refund</button>
+							<button class="btn btn-info btn-sm reportbtn-gap" type="button"
+							        onclick="copy('{{ order.order_id.S }}')">
+								Copy
+							</button>
 							<button id="{{ order.order_id.S }}_delete" class="btn btn-danger btn-sm reportbtn-gap" type="button"
 							        onclick="deleteItem('{{ order.order_id.S }}')">Delete</button>
 						</td>
@@ -159,7 +171,7 @@
                            <p class="text-left"> Revenue: {{ item.revenue }} </p>
                          </span>
 									<div class="form-group align-middle float-right m-1">
-										<button class="btn btn-info btn-sm reportbtn-gap" type="button" {{ '' if order.email.S in refunds else 'disabled' }}>Refund</button>
+										<button class="btn btn-info btn-sm reportbtn-gap" type="button">Delete</button>
 									</div>
 								</div>
 							{% else %}
@@ -269,8 +281,10 @@
 								        onclick="delivery('{{ order.order_id.S }}')">
 									Cancel
 								</button>
-								<button id="{{ order.order_id.S }}_refund" class="btn btn-info btn-sm reportbtn-gap" type="button"
-								        onclick="refund('{{ order.order_id.S }}')" {{ '' if order.email.S in refunds else 'disabled' }}>Refund</button>
+								<button class="btn btn-info btn-sm reportbtn-gap" type="button"
+								        onclick="copy('{{ order.order_id.S }}')">
+									Copy
+								</button>
 								<button id="{{ order.order_id.S }}_delete" class="btn btn-danger btn-sm reportbtn-gap" type="button"
 								        onclick="deleteItem('{{ order.order_id.S }}')">Delete</button>
 							</td>
