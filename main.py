@@ -1543,10 +1543,12 @@ def csv_table():
     for order in orders['Items']:
         if order['status']['S'] == 'open':
             items = {item['M']['meal_name']['S']: item['M']['qty']['N'] for item in order['order_items']['L']}
-            items['Total'] = sum(items.values())
+            items['Total'] = sum([int(i) for i in items.values()])
             items['Name'] = order['name']['S']
             items['Email'] = order['email']['S']
             items['Phone'] = order['phone']['S']
+            for item in order['order_items']['L']:
+                meals[item['M']['meal_name']['S']] += int(item['M']['qty']['N'])
             cw.writerow(items)
     cw.writerow({'Name': 'Total', **meals})
     return si.getvalue()
