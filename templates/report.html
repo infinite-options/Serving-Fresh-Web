@@ -52,7 +52,7 @@
 				type: 'POST',
 				url:  `/api/v1/kitchen/copy/${order_id}`,
 				success() {
-					alert( 'Refresh page to see changes' );
+					location.reload();
 				}
 			} );
 		}
@@ -409,8 +409,6 @@
 										<input type="checkbox" class="form-check-input" id="exampleCheck1">
 										<label class="form-check-label" for="exampleCheck1">Check me out</label>
 									</div>
-									<button type="submit" class="btn btn-primary">Submit</button>
-									test
 								</div>
 								<div class="modal-footer">
 									<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
