@@ -1423,16 +1423,16 @@ def delete_order(order_id):
                             ':value': {'S': order_id}
                         })
         item = order['Items'][0]
-        # item['totalAmount'] -= \
-        #     float(item['order_items']['L'][int(request.values['index'])]['M']['price']['N']) * \
-        #     int(item['order_items']['L'][int(request.values['index'])]['M']['qty']['N'])
+        item['totalAmount'] -= \
+            float(item['order_items']['L'][int(request.values['index'])]['M']['price']['N']) * \
+            int(item['order_items']['L'][int(request.values['index'])]['M']['qty']['N'])
         item['order_items']['L'].pop(int(request.values['index']))
         update_meal = db.update_item(TableName='meal_orders',
                                      Key={'order_id': {'S': order_id}},
-                                     UpdateExpression='SET order_items = :items',
-                                     # totalAmount = :total',
+                                     UpdateExpression='SET order_items = :items \
+                                     totalAmount = :total',
                                      ExpressionAttributeValues={
-                                         # ':total': item['totalAmount'],
+                                         ':total': item['totalAmount'],
                                          ':items': item['order_items']
                                      })
     else:
@@ -1514,9 +1514,9 @@ def csv_customers():
                                                   order['city']['S'],
                                                   order['state']['S'],
                                                   order['zipCode']['N'],
-                                                  order['totalAmount']['N']]
+                                                  float(order['totalAmount']['N'])]
             else:
-                customers[order['email']['S']][9] += order['totalAmount']['N']
+                customers[order['email']['S']][9] += float(order['totalAmount']['N'])
     
     si = io.StringIO()
     cw = csv.writer(si)
