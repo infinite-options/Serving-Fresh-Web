@@ -1428,6 +1428,7 @@ def delete_order(order_id):
         item['totalAmount']['N'] -= \
             float(item['order_items']['L'][int(request.values['index'])]['M']['price']['N']) * \
             int(item['order_items']['L'][int(request.values['index'])]['M']['qty']['N'])
+        item['totalAmount']['N'] = str(item['totalAmount']['N'])
         item['order_items']['L'].pop(int(request.values['index']))
         update_meal = db.update_item(TableName='meal_orders',
                                      Key={'order_id': {'S': order_id}},
