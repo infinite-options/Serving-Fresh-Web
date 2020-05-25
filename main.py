@@ -1432,7 +1432,7 @@ def delete_order(order_id):
         item['order_items']['L'].pop(int(request.values['index']))
         update_meal = db.update_item(TableName='meal_orders',
                                      Key={'order_id': {'S': order_id}},
-                                     UpdateExpression='SET order_items = :items \
+                                     UpdateExpression='SET order_items = :items, \
                                      totalAmount = :total',
                                      ExpressionAttributeValues={
                                          ':total': item['totalAmount'],
