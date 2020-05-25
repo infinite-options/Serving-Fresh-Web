@@ -114,8 +114,8 @@
 							<button class="btn btn-primary" onclick="routeDetails()">
 								Route Details
 							</button>
-							<button class="btn btn-primary" data-toggle="modal" data-target="#refundModal">
-								Refund
+							<button class="btn btn-primary" data-toggle="modal" data-target="#couponModal">
+								Issue Coupon
 							</button>
 							<button class="btn btn-primary" onclick="sendReports()">
 								Send Reports
@@ -384,12 +384,12 @@
 					</div>
 				</div>
 
-				<div class="modal fade" id="refundModal" tabindex="-1" role="dialog" aria-labelledby="refundModalLabel"
+				<div class="modal fade" id="couponModal" tabindex="-1" role="dialog" aria-labelledby="couponModalLabel"
 				     aria-hidden="true">
 					<div class="modal-dialog" role="document">
 						<div class="modal-content">
 							<div class="modal-header">
-								<h5 class="modal-title" id="refundModalLabel">Modal title</h5>
+								<h5 class="modal-title" id="couponModalLabel">Issue Coupon</h5>
 								<button type="button" class="close" data-dismiss="modal" aria-label="Close">
 									<span aria-hidden="true">&times;</span>
 								</button>
@@ -412,6 +412,7 @@
 										<label for="notes">Notes</label>
 										<input type="text" class="form-control" id="notes">
 									</div>
+									<input type="hidden" id="num_used" value="0"/>
 									<div class="form-check">
 										<input type="checkbox" class="form-check-input" id="recurring">
 										<label class="form-check-label" for="recurring">Recurring</label>
