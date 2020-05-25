@@ -1402,7 +1402,8 @@ def copy(order_id):
                         ':value': {'S': order_id}
                     })
     order['Items'][0].update({'created_at': {'S': datetime.now().isoformat()[0:19]},
-                              'order_id': {'S': uuid.uuid4().hex}})
+                              'order_id': {'S': uuid.uuid4().hex},
+                              'totalAmount': {'N': '0'}})
     db.put_item(TableName='meal_orders',
                 Item=order['Items'][0])
     
@@ -1423,7 +1424,8 @@ def delete_order(order_id):
                             ':value': {'S': order_id}
                         })
         item = order['Items'][0]
-        item['totalAmount'] -= \
+        item['totalAmount']['N'] = float(item['totalAmount']['N'])
+        item['totalAmount']['N'] -= \
             float(item['order_items']['L'][int(request.values['index'])]['M']['price']['N']) * \
             int(item['order_items']['L'][int(request.values['index'])]['M']['qty']['N'])
         item['order_items']['L'].pop(int(request.values['index']))
