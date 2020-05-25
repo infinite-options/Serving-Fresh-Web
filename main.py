@@ -840,9 +840,7 @@ def renewIndvPastMeal(id):
                                      ExpressionAttributeValues={
                                          ':ca': {'S': todays_datetime},
                                          ':ct': {'N': '0'}
-            
-                                     }
-                                     )
+                                     })
     except:
         flash('Meal not found.', 'danger')
     
@@ -1418,9 +1416,29 @@ def delete_order(order_id):
     if 'kitchen_name' not in login_session:
         return redirect(url_for('index'))
     
-    delete_meal = db.delete_item(TableName='meal_orders',
-                                 Key={'order_id': {'S': order_id}
-                                      })
+    if 'index' in request.values:
+        order = db.scan(TableName='meal_orders',
+                        FilterExpression='order_id = :value',
+                        ExpressionAttributeValues={
+                            ':value': {'S': order_id}
+                        })
+        item = order['Items'][0]
+        # item['totalAmount'] -= \
+        #     float(item['order_items']['L'][int(request.values['index'])]['M']['price']['N']) * \
+        #     int(item['order_items']['L'][int(request.values['index'])]['M']['qty']['N'])
+        item['order_items']['L'].pop(int(request.values['index']))
+        update_meal = db.update_item(TableName='meal_orders',
+                                     Key={'order_id': {'S': order_id}},
+                                     UpdateExpression='SET order_items = :items',
+                                     # totalAmount = :total',
+                                     ExpressionAttributeValues={
+                                         # ':total': item['totalAmount'],
+                                         ':items': item['order_items']
+                                     })
+    else:
+        delete_meal = db.delete_item(TableName='meal_orders',
+                                     Key={'order_id': {'S': order_id}
+                                          })
     
     response = {'message': 'Request successful'}
     return response, 200
@@ -1638,8 +1656,7 @@ def closeKitchen(kitchen_id):
                                   UpdateExpression='SET isOpen = :val',
                                   ExpressionAttributeValues={
                                       ':val': {'BOOL': False}
-                                  }
-                                  )
+                                  })
 
 
 @app.route('/kitchens/hours')
