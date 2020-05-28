@@ -1428,7 +1428,7 @@ def delete_order(order_id):
         item['totalAmount']['N'] -= \
             float(item['order_items']['L'][int(request.values['index'])]['M']['price']['N']) * \
             int(item['order_items']['L'][int(request.values['index'])]['M']['qty']['N'])
-        item['totalAmount']['N'] = str(item['totalAmount']['N'])
+        item['totalAmount']['N'] = str(max(0, item['totalAmount']['N']))
         item['order_items']['L'].pop(int(request.values['index']))
         update_meal = db.update_item(TableName='meal_orders',
                                      Key={'order_id': {'S': order_id}},
@@ -1447,7 +1447,7 @@ def delete_order(order_id):
     return response, 200
 
 
-def csv_orders():
+def csv_orders(delivered=False):
     orders = db.scan(TableName='meal_orders',
                      FilterExpression='kitchen_id = :value',
                      ExpressionAttributeValues={
@@ -1457,7 +1457,7 @@ def csv_orders():
     data = []
     
     for order in orders['Items']:
-        if order['status']['S'] == 'open':
+        if order['status']['S'] == ('delivered' if delivered else 'open'):
             name = order['name']['S'].split()
             data.append([name[0],
                          name[1] if len(name) > 1 else '',
@@ -1495,7 +1495,21 @@ def detailed_orders():
     return output
 
 
-def csv_customers():
+@app.route('/api/v1/kitchen/orders2')
+@login_required
+def detailed_orders2():
+    if 'kitchen_name' not in login_session:
+        return redirect(url_for('index'))
+    
+    orders = csv_orders(True)
+    
+    output = make_response(orders)
+    output.headers["Content-Disposition"] = "attachment; filename=orders.csv"
+    output.headers["Content-type"] = "text/csv"
+    return output
+
+
+def csv_customers(delivered=False):
     orders = db.scan(TableName='meal_orders',
                      FilterExpression='kitchen_id = :value',
                      ExpressionAttributeValues={
@@ -1505,7 +1519,7 @@ def csv_customers():
     customers = {}
     
     for order in orders['Items']:
-        if order['status']['S'] == 'open':
+        if order['status']['S'] == ('delivered' if delivered else 'open'):
             if order['email']['S'] not in customers:
                 name = order['name']['S'].split()
                 customers[order['email']['S']] = [str(len(customers) + 1),
@@ -1543,7 +1557,21 @@ def detailed_customers():
     return output
 
 
-def csv_table():
+@app.route('/api/v1/kitchen/customers2')
+@login_required
+def detailed_customers2():
+    if 'kitchen_name' not in login_session:
+        return redirect(url_for('index'))
+    
+    customers = csv_customers(True)
+    
+    output = make_response(customers)
+    output.headers["Content-Disposition"] = "attachment; filename=customers.csv"
+    output.headers["Content-type"] = "text/csv"
+    return output
+
+
+def csv_table(delivered=False):
     meals = db.scan(TableName='meals',
                     FilterExpression='kitchen_id = :value',
                     ExpressionAttributeValues={
@@ -1562,7 +1590,7 @@ def csv_table():
     cw = csv.DictWriter(si, ['Name', 'Email', 'Phone', 'Total'] + list(meals.keys()))
     cw.writeheader()
     for order in orders['Items']:
-        if order['status']['S'] == 'open':
+        if order['status']['S'] == ('delivered' if delivered else 'open'):
             items = {item['M']['meal_name']['S']: item['M']['qty']['N'] for item in order['order_items']['L']}
             items['Total'] = sum([int(i) for i in items.values()])
             items['Name'] = order['name']['S']
@@ -1582,6 +1610,20 @@ def detailed_table():
         return redirect(url_for('index'))
     
     table = csv_table()
+    
+    output = make_response(table)
+    output.headers["Content-Disposition"] = "attachment; filename=table.csv"
+    output.headers["Content-type"] = "text/csv"
+    return output
+
+
+@app.route('/api/v1/kitchen/table2')
+@login_required
+def detailed_table2():
+    if 'kitchen_name' not in login_session:
+        return redirect(url_for('index'))
+    
+    table = csv_table(True)
     
     output = make_response(table)
     output.headers["Content-Disposition"] = "attachment; filename=table.csv"

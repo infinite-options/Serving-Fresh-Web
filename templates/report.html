@@ -257,6 +257,23 @@
 					{% if not deliveredOrders %}
 						<p class="lead text-secondary ml-4">You currently have no orders that have been delivered.</p>
 					{% else %}
+						<div>
+							<a href="/api/v1/kitchen/orders2" download="orders.csv">
+								<button class="btn btn-primary" type="submit">
+									Order Details
+								</button>
+							</a>
+							<a href="/api/v1/kitchen/customers2" download="customers.csv">
+								<button class="btn btn-primary" type="submit">
+									Customer Details
+								</button>
+							</a>
+							<a href="/api/v1/kitchen/table2" download="table.csv">
+								<button class="btn btn-primary" type="submit">
+									Pivot Table
+								</button>
+							</a>
+						</div>
 						<div class="border-top ml-4 p-2 mb-1 mt-1">
 							<table class='table table-borderless mb-0'>
 								<thead>
@@ -413,6 +430,7 @@
 										<input type="text" class="form-control" id="notes">
 									</div>
 									<input type="hidden" id="num_used" value="0"/>
+									<input type="hidden" id="active" value="true"/>
 									<div class="form-check">
 										<input type="checkbox" class="form-check-input" id="recurring">
 										<label class="form-check-label" for="recurring">Recurring</label>
