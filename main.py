@@ -1505,7 +1505,7 @@ def detailed_orders2():
     orders = csv_orders(True)
     
     output = make_response(orders)
-    output.headers["Content-Disposition"] = "attachment; filename=orders.csv"
+    output.headers["Content-Disposition"] = "attachment; filename=past_orders.csv"
     output.headers["Content-type"] = "text/csv"
     return output
 
@@ -1570,7 +1570,7 @@ def detailed_customers2():
     customers = csv_customers(True)
     
     output = make_response(customers)
-    output.headers["Content-Disposition"] = "attachment; filename=customers.csv"
+    output.headers["Content-Disposition"] = "attachment; filename=past_customers.csv"
     output.headers["Content-type"] = "text/csv"
     return output
 
@@ -1630,7 +1630,7 @@ def detailed_table2():
     table = csv_table(True)
     
     output = make_response(table)
-    output.headers["Content-Disposition"] = "attachment; filename=table.csv"
+    output.headers["Content-Disposition"] = "attachment; filename=past_table.csv"
     output.headers["Content-type"] = "text/csv"
     return output
 
