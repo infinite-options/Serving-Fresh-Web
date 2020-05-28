@@ -411,33 +411,42 @@
 									<span aria-hidden="true">&times;</span>
 								</button>
 							</div>
-							<form action="https://phaqvwjbw6.execute-api.us-west-1.amazonaws.com/dev/api/v1/coupons" method="post">
+							<form action="https://phaqvwjbw6.execute-api.us-west-1.amazonaws.com/dev/api/v1/coupons" method="POST">
 								<div class="modal-body">
 									<div class="form-group">
 										<label for="credit">Credit</label>
-										<input type="text" class="form-control" id="credit" name="credit">
+										<input type="text" class="form-control" name="credit">
 									</div>
+
+									<input type="hidden" name="active" value="true">
+
 									<div class="form-group">
 										<label for="days">Days</label>
-										<input type="text" class="form-control" id="days" name="days">
+										<input type="text" class="form-control" name="days">
 									</div>
+
 									<div class="form-group">
 										<label for="lim">Limit</label>
-										<input type="text" class="form-control" id="lim" name="lim">
+										<input type="text" class="form-control" name="lim">
 									</div>
 									<div class="form-group">
 										<label for="notes">Notes</label>
-										<input type="text" class="form-control" id="notes" name="notes">
+										<input type="text" class="form-control" name="notes">
 									</div>
-									<input type="hidden" id="num_used" value="0" name="num_used"/>
-									<input type="hidden" id="active" value="true" name="active"/>
+
+									<input type="hidden" name="num_used" value="0">
+
+									<!-- <div class="form-check">
+										 <input type="checkbox" class="form-check-input" name="recurring">
+										 <label class="form-check-label" for="recurring">Recurring</label>
+									</div> -->
 									<div class="form-group">
-										<label for="email_id">Email</label>
-										<input type="email" class="form-control" id="email_id" name="email_id">
+										<label for="email">Email</label>
+										<input type="email_id" class="form-control" name="email_id">
 									</div>
 									<div class="form-group">
 										<label for="coupon_type">Coupon Type</label>
-										<input type="text" class="form-control" id="coupon_type" name="coupon_type">
+										<input type="text" class="form-control" name="coupon_type">
 									</div>
 								</div>
 								<div class="modal-footer">
