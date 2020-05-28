@@ -1467,7 +1467,8 @@ def csv_orders(delivered=False):
                          order['street']['S'],
                          order['city']['S'],
                          order['state']['S'],
-                         order['zipCode']['N']])
+                         order['zipCode']['N'],
+                         order['totalAmount']['N']])
             for items in order['order_items']['L']:
                 data.append([items['M']['price']['N'],
                              items['M']['qty']['N'],
