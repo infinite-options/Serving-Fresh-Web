@@ -1536,7 +1536,7 @@ def csv_customers(delivered=False):
                                                   order['zipCode']['N'],
                                                   float(order['totalAmount']['N'])]
             else:
-                customers[order['email']['S']][9] += float(order['totalAmount']['N'])
+                customers[order['email']['S']][10] += float(order['totalAmount']['N'])
     
     si = io.StringIO()
     cw = csv.writer(si)
