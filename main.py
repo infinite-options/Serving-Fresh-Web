@@ -216,8 +216,7 @@ def login():
             if user.get('Count') == 0:
                 return render_template('login.html', title='Login', form=form)
             
-            if not check_password_hash(user['Items'][0]['password']['S'], \
-                                       password):
+            if not check_password_hash(user['Items'][0]['password']['S'], password):
                 return render_template('login.html', title='Login', form=form)
             else:
                 user_id = user['Items'][0]['kitchen_id']['S']
@@ -1455,11 +1454,13 @@ def csv_orders(delivered=False):
                      })
     
     data = []
+    orders['Items'].sort(key=lambda order: order['created_at']['S'], reverse=True)
     
     for order in orders['Items']:
         if order['status']['S'] == ('delivered' if delivered else 'open'):
             name = order['name']['S'].split()
-            data.append([name[0],
+            data.append([order['created_at']['S'],
+                         name[0],
                          name[1] if len(name) > 1 else '',
                          order['phone']['S'],
                          order['email']['S'],
@@ -1516,6 +1517,7 @@ def csv_customers(delivered=False):
                          ':value': {'S': current_user.get_id()}
                      })
     
+    orders['Items'].sort(key=lambda order: order['created_at']['S'], reverse=True)
     customers = {}
     
     for order in orders['Items']:
@@ -1523,6 +1525,7 @@ def csv_customers(delivered=False):
             if order['email']['S'] not in customers:
                 name = order['name']['S'].split()
                 customers[order['email']['S']] = [str(len(customers) + 1),
+                                                  order['created_at']['S'],
                                                   name[0],
                                                   name[1] if len(name) > 1 else '',
                                                   order['phone']['S'],
@@ -1537,7 +1540,8 @@ def csv_customers(delivered=False):
     
     si = io.StringIO()
     cw = csv.writer(si)
-    cw.writerow(['#', 'First Name', 'Last Name', 'Phone', 'Email', 'Street', 'City', 'State', 'ZipCode', 'Total'])
+    cw.writerow(
+        ['#', 'Date', 'First Name', 'Last Name', 'Phone', 'Email', 'Street', 'City', 'State', 'ZipCode', 'Total'])
     for customer in customers.values():
         cw.writerow(customer)
     return si.getvalue()
