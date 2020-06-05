@@ -157,8 +157,14 @@ def payment(order_id, total):
     return render_template('paypal.html', total=total, order_id=order_id)
 
 
-@app.route('/paymentComplete')
-def paymentComplete():
+@app.route('/paymentComplete/<string:order_id>')
+def paymentComplete(order_id):
+    db.update_item(TableName='meal_orders',
+                    Key={'order_id': {'S': order_id}},
+                    UpdateExpression='SET paid = :val',
+                    ExpressionAttributeValues={
+                    ':val': {'BOOL': True}
+                    })
     return render_template('paymentComplete.html')
 
 
