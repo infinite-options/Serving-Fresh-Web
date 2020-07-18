@@ -165,6 +165,17 @@ def paymentComplete(order_id):
                     ExpressionAttributeValues={
                     ':val': {'BOOL': True}
                     })
+    orders = db.scan(FilterExpression='order_id = :value',
+                        ExpressionAttributeValues={':value': {'S': order_id}},
+                        TableName="meal_orders")
+
+    if orders is not None:
+        email_tag = 'email_'+orders['Items'][0]['email']['S'].lower()
+        endpoint = 'https://phaqvwjbw6.execute-api.us-west-1.amazonaws.com/dev/api/v1/send_notification'
+        payload = {'tags':email_tag, 
+                    'message':'Payment received'}
+        r = requests.post(url = endpoint, data = payload)
+
     return render_template('paymentComplete.html')
 
 
