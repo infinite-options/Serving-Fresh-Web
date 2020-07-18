@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <!-- jquery script -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+  <!-- JavaScript  -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js " integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1 " crossorigin="anonymous ">
+  </script>
+  <!-- semantic-css -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.css">
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <!-- semantic-js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.js"></script>
+  <!-- new-bootstrap-js -->
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+  <!-- new-bootstrap-css -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+  <!-- local css -->
+  <link href="{{ url_for('.static', filename='css/login.css') }}" rel="stylesheet" />
+
+  <title>Meal Ordering</title>
+</head>
+
+<body>
+  <div class="login-flash">
+    <div class="col-md-12">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">
+              {{ message }}
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+    </div>
+  </div>
+  <div class="container-fluid d-flex justify-content-center in-middle">
+    <div class="login-box col-md-4">
+      <form method = "POST" action="">        <!-- posts the information to the same route in came in on -->
+        {{ form.hidden_tag() }}            <!-- for security reasons -->
+        <fieldset class="form-group">      <!-- adding other form fields.  This is Bootstrap -->
+
+          <img src="{{ url_for('.static', filename='images/landing-logo.png') }}" class="center-block" width="150px" height="150px">
+          <div class="form-group">
+            {{ form.email.label(class="form-control-label") }}
+
+            {% if form.email.errors %}
+            {{ form.email(class="form-control form-control-lg is-invalid") }}
+            <div class="invalid-feedback">
+              {% for error in form.email.errors %}
+              <span>{{ error }}</span>
+              {% endfor %}
+            </div>
+            {% else %}
+            {{ form.email(class="form-control form-control-lg") }}
+            {% endif %}
+
+          </div>
+          <div class="form-group">
+            <div class="d-flex">
+              {{ form.password.label(class="form-control-label") }}
+              <small class="text-muted ml-auto mt-1 hidden">
+                <a href="#">Forgot Password?</a>  <!-- this is a link that goes nowhere for now -->
+              </small>
+            </div>
+            {% if form.password.errors %}
+            {{ form.password(class="form-control form-control-lg is-invalid") }}
+            <div class="invalid-feedback">
+              {% for error in form.password.errors %}
+              <span>{{ error }}</span>
+              {% endfor %}
+            </div>
+            {% else %}
+            {{ form.password(class="form-control form-control-lg") }}
+            {% endif %}
+          </div>
+        </fieldset>
+        <div class="form-group d-flex">
+          {{ form.submit(class="btn btn-info") }}
+          <span class="ml-auto"> Need Support? <br> (925) 400-7469 </span>
+        </div>
+      </form>
+      <div class="pt-3 d-flex">
+        <small class="test-muted">
+          New Vendor?
+          <br>
+          <a href="{{ url_for('register') }}">Create Account Here</a>  <!--pass in name of function -->
+        </small>
+        <small class="test-muted ml-auto text-right">
+          <span > Need to Go Back? </span>
+          <br>
+          <a href="{{ url_for('home') }}">Return to Home Page</a>  <!--pass in name of function -->
+        </small>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>

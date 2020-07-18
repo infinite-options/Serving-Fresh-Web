@@ -237,6 +237,38 @@ def login():
             return render_template('login.html', title='Login', form=form)
     return render_template('login.html', title='Login', form=form)
 
+@app.route('/admin/login', methods=['GET', 'POST'])
+def adminLogin():
+    form = LoginForm()
+    if form.validate_on_submit():
+        email = form.email.data.lower()
+        password = form.password.data
+        try:
+            user = db.query(TableName='kitchens',
+                            IndexName='email-index',
+                            Limit=1,
+                            KeyConditionExpression='email = :val',
+                            ExpressionAttributeValues={
+                                ':val': {'S': email}
+                            })
+
+            if user.get('Count') == 0:
+                return render_template('login.html', title='Login', form=form)
+
+            if not check_password_hash(user['Items'][0]['password']['S'], password):
+                return render_template('login.html', title='Login', form=form)
+            else:
+                user_id = user['Items'][0]['kitchen_id']['S']
+                login_session['kitchen_name'] = user['Items'][0]['kitchen_name']['S']
+                login_session['user_id'] = user_id
+                login_session['email'] = email
+                login_user(User(user_id))
+                return redirect('https://infinite-options.github.io/notifications/')
+
+        except Exception as e:
+            print(e)
+            return render_template('adminLogin.html', title='Login', form=form)
+    return render_template('adminLogin.html', title='Login', form=form)
 
 @app.route('/accounts/register', methods=['GET', 'POST'])
 def register():
