@@ -132,6 +132,7 @@
 							<th class="phone-col align-middle table-borderless" scope="col">Phone</th>
 							<th class="number-col align-middle table-borderless" scope="col">Total ($)</th>
 							<th class="number-col align-middle table-borderless" scope="col">Items</th>
+							<th class="number-col align-middle table-borderless" scope="col">Payment Completed?</th>
 							<th class="orderbtn-col align-middle"></th>
 							</thead>
 						</table>
@@ -158,6 +159,7 @@
 						<td class="phone-col align-middle table-borderless">{{ order.phone.S }}</td>
 						<td class="number-col align-middle table-borderless">{{ order.totalAmount.N }}</td>
 						<td class="number-col align-middle table-borderless">{{ order.order_items.L|length }}</td>
+						<td class="number-col align-middle table-borderless">{{ order.paid.BOOL }}</td>
 						<td class="orderbtn-col align-middle">
 							<button class="btn btn-primary btn-sm reportbtn-gap" type=x"button" data-toggle="collapse"
 							        data-target="#openCollapse{{ loop.index }}" aria-expanded="false"
