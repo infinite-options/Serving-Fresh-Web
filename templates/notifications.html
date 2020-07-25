@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <!-- jquery script -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+  <!-- JavaScript  -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js " integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1 " crossorigin="anonymous ">
+  </script>
+  <!-- semantic-css -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.css">
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <!-- semantic-js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.js"></script>
+  <!-- new-bootstrap-js -->
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+  <!-- new-bootstrap-css -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+  <!-- local css -->
+  <link href="{{ url_for('.static', filename='css/login.css') }}" rel="stylesheet" />
+  <!-- ag-grid stylesheets -->
+  <script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.noStyle.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/dist/styles/ag-grid.css">
+  <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/dist/styles/ag-theme-alpine.css">
+
+  <title>Meal Ordering</title>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-secondary m-0">
+    <a class="navbar-brand" href="#">Notifications</a>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav mr-auto float-right">
+        <li class="nav-item">
+          <a class="nav-link" data-toggle="modal" data-target="#groupsModal" onclick='openGroups()' href="#">Saved Groups</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link px-3" data-toggle="modal" data-target="#messageModal" onclick='openMessages()' href="#">Saved Messages</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+        </li>
+      </ul>
+    </div>
+  </nav>
+  <div class="container-fluid pt-3 pl-3 pr-3"
+  style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-size: 1.2em;">
+    <div class="row">
+      <div class="col col-12 col-lg-8">
+        <div id="myGrid" style="height:600px" class="ag-theme-alpine w-100 mb-3"></div>
+      </div>
+      <div class="col col-12 col-lg-4">
+        <textarea id="myTextBox" class="w-100 p-3" oninput="updateValidity()"
+        placeholder='Enter message here'></textarea>
+        <div class='d-flex justify-content-around'>
+          <button class='btn btn-secondary' onclick='sendMessage()' id='send'>Send Message</button>
+          <button class='btn btn-secondary' onclick='sendToAll()' id='sendAll'>Send To All</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="groupsModal" tabindex="-1" role="dialog" aria-labelledby="#groupModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title" id="groupModalLabel">Saved Groups</h4>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body" id='savedGroups'></div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="saveGroup()" id='saveGroup'>Save New Group</button>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal fade" id="messageModal" tabindex="-1" role="dialog" aria-labelledby="#messageModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title" id="messageModalLabel">Saved Messages</h4>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body" id='savedMessages'></div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="saveMessage()" id='saveMessage'>Save New Message</button>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript" charset="utf-8">
+    let base_api = 'https://phaqvwjbw6.execute-api.us-west-1.amazonaws.com/dev/api/v1'
+    let savedGroups = []
+    let savedMessages = []
+    let colDefs = [
+      {field: '', headerCheckboxSelection: true, checkboxSelection: true,
+       headerCheckboxSelectionFilteredOnly: true, width: 50},
+      {headerName: 'Name', field: 'name'},
+      {headerName: 'Email', field: 'email'},
+      {headerName: 'Phone', field: 'phone'},
+      {headerName: 'Address', field: 'address'},
+      {headerName: 'City', field: 'city'},
+      {headerName: 'Zip Code', field: 'zipCode'},
+      {headerName: 'Kitchen', field: 'kitchen'},
+      {headerName: '# Orders', field: 'n_orders'},
+      {headerName: 'Created', field: 'first_order'},
+      {headerName: 'Last Order', field: 'last_order'}
+    ]
+    colDefs.forEach(colDef => {
+      if (colDef.field) colDef.sortable = true
+      colDef.suppressMovable = true
+      colDef.filterParams = {
+        buttons: ['apply', 'reset']
+      }
+      switch (colDef.field) {
+        case '':
+          break
+        case 'n_orders':
+          colDef.filter = 'agNumberColumnFilter'
+          break
+        case 'first_order':
+        case 'last_order':
+          colDef.filter = 'agDateColumnFilter'
+          colDef.filterParams.comparator = function(filterDate, cellValue) {
+            var dateParts = cellValue.split('-')
+            var day = parseInt(dateParts[2])
+            var month = parseInt(dateParts[1]) - 1
+            var year = parseInt(dateParts[0])
+            var cellDate = new Date(year, month, day)
+            return (cellDate > filterDate ? 1 : cellDate < filterDate ? -1 : 0)
+          }
+          break
+        default:
+          colDef.filter = true
+      }
+    })
+    let grid = new agGrid.Grid(document.querySelector('#myGrid'), {
+      onGridReady: params => gridApi = params.api,
+      onSelectionChanged: updateValidity,
+      columnDefs: colDefs,
+      rowData: [],
+      defaultColDef: {resizable: true },
+      groupSelectsFiltered: true,
+      groupUseEntireRow: true,
+      rowSelection: 'multiple'
+    })
+    function resize() {
+      document.querySelector('#myGrid').style = `height: ${window.innerWidth > 991 ? window.innerHeight-86 : 480}px`
+      document.querySelector('#myTextBox').style = `height: ${window.innerWidth > 991 ? window.innerHeight-124 : 200}px`
+    }
+    async function loadTable() {
+      const kitchenMap = new Map()
+      let res = await fetch(`${base_api}/kitchens`)
+      let data = await res.json()
+      data.result.forEach(kitchen => {
+        kitchenMap.set(kitchen.kitchen_id.S, kitchen.kitchen_name.S)
+      })
+      res = await fetch(`${base_api}/all_orders`)
+      data = await res.json()
+      let rowData = []
+      data.Items.forEach(item => {
+        rowData.push({
+          name: item.name.S,
+          email: item.email.S,
+          phone: item.phone.S,
+          address: item.street.S,
+          city: item.city.S,
+          kitchen: kitchenMap.get(item.kitchen_id.S),
+          zipCode: item.zipCode.N,
+          n_orders: item.number_of_orders.S,
+          first_order: item.created_at.S.slice(0, 10),
+          last_order: item.last_order_date.S.slice(0, 10)
+        })
+      })
+      rowData.forEach(row => {
+        row.zipCode = parseInt(row.zipCode)
+        row.n_orders = parseInt(row.n_orders)
+      })
+      grid.gridOptions.api.setRowData(rowData)
+    }
+    function openGroups() {
+      let modalBody = document.querySelector('#savedGroups')
+      modalBody.innerHTML = `<div class='list-group'>
+        ${savedGroups.map(group => `<div class='list-group-item list-group-item-action'
+          onclick='selectGroup("${group.name}")'>${group.name}</div>`).join('')}
+        ${savedGroups.length === 0 ? 'No saved groups' : ''}
+      </div>`
+    }
+    function selectGroup(name) {
+      let nodes = []
+      for (let group of savedGroups) {
+        if (group.name === name) nodes = group.recipients
+      }
+      let alreadySelected = true
+      nodes.forEach(node => {
+        if (!node.selected) alreadySelected = false
+        node.setSelected(true)
+      });
+      if (alreadySelected) nodes.forEach(node => {
+        node.setSelected(false)
+      })
+    }
+    function saveGroup() {
+      let recipients = grid.gridOptions.api.getSelectedNodes()
+      if (recipients.length === 0) return
+      let name = prompt('Enter a group name:')
+      if (name === '' || name === null || savedGroups.map(group => group.name).indexOf(name) !== -1) return
+      savedGroups.push({name: name, recipients: recipients})
+      openGroups()
+    }
+    function openMessages() {
+      let modalBody = document.querySelector('#savedMessages')
+      modalBody.innerHTML = `<div class='list-group'>
+        ${savedMessages.map(msg => `<div class='list-group-item list-group-item-action'
+          onclick='selectMessage("${msg.body}")'>${msg.title}</div>`).join('')}
+        ${savedMessages.length === 0 ? 'No saved messages' : ''}
+      </div>`
+    }
+    function selectMessage(msg) {
+      document.querySelector('#myTextBox').value = msg
+    }
+    function saveMessage() {
+      let msg = document.querySelector('#myTextBox').value
+      if (msg === '') return
+      let title = prompt('Enter message title:')
+      savedMessages.push({title: title, body: msg})
+      openMessages()
+    }
+    function sendMessage() {
+      let message = document.querySelector('#myTextBox').value
+      let recipients = grid.gridOptions.api.getSelectedNodes()
+      if (message === '' || recipients.length === 0) return
+      let emails = []
+      for (let node of recipients) {
+        let email = `email_${node.data.email.toLowerCase()}`
+        if (emails.indexOf(email) === -1) emails.push(email)
+      }
+      const formData = new FormData()
+      formData.append('tags', emails.join(','))
+      formData.append('message', message)
+      fetch(`${base_api}/send_notification`, {
+        method: 'POST',
+        body: formData
+      })
+      document.querySelector('#myTextBox').value = ''
+      updateValidity()
+      alert('Message sent successfully')
+    }
+    function sendToAll() {
+      let message = document.querySelector('#myTextBox').value
+      if (message === '') return
+      const formData = new FormData()
+      formData.append('tags', 'default')
+      formData.append('message', message)
+      fetch(`${base_api}/send_notification`, {
+        method: 'POST',
+        body: formData
+      })
+      document.querySelector('#myTextBox').value = ''
+      updateValidity()
+      alert('Message sent successfully')
+    }
+    function updateValidity() {
+      let msgValid = document.querySelector('#myTextBox').value !== ''
+      let recipientsValid = grid.gridOptions.api.getSelectedNodes().length > 0
+      document.querySelector('#send').className = 'btn btn-secondary ' +
+        (!msgValid || !recipientsValid ? 'disabled' : '')
+      document.querySelector('#sendAll').className = 'btn btn-secondary ' +
+        (!msgValid ? 'disabled' : '')
+      document.querySelector('#saveGroup').className = 'btn btn-secondary ' +
+        (!recipientsValid ? 'disabled' : '')
+      document.querySelector('#saveMessage').className = 'btn btn-secondary ' +
+        (!msgValid ? 'disabled' : '')
+    }
+    window.onresize = resize
+    resize()
+    loadTable()
+    updateValidity()
+  </script>
+</body>
+
+</html>

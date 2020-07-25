@@ -212,6 +212,11 @@ def home():
     return render_template('home.html', title='Home')
 
 
+@app.route('/admin/notifications', methods=['GET', 'POST'])
+def notifications():
+    return render_template('notifications.html', title='Notifications')
+
+
 @app.route('/accounts', methods=['GET', 'POST'])
 @app.route('/accounts/login', methods=['GET', 'POST'])
 def login():
@@ -250,6 +255,8 @@ def login():
 
 @app.route('/admin/login', methods=['GET', 'POST'])
 def adminLogin():
+    if current_user.is_authenticated:
+        return redirect(url_for('notifications', id=login_session['user_id']))
     form = LoginForm()
     if form.validate_on_submit():
         email = form.email.data.lower()
@@ -274,7 +281,7 @@ def adminLogin():
                 login_session['user_id'] = user_id
                 login_session['email'] = email
                 login_user(User(user_id))
-                return redirect('https://infinite-options.github.io/notifications/')
+                return redirect(url_for('notifications', id=login_session['user_id']))
 
         except Exception as e:
             print(e)
