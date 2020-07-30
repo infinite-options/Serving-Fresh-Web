@@ -54,9 +54,12 @@
   <div class="text-dark d-flex justify-content-center text-center">
     Need Support? &nbsp; (925) 400-7469
   </div>
-  <a class="text-dark d-flex justify-content-center" href="{{ url_for('paymentCancelled', order_id=order_id) }}">
+  <div class="text-dark d-flex justify-content-center text-center">
+    Need to cancel? &nbsp; <a href="{{ url_for('paymentCancelled', order_id=order_id) }}">Cancel here.</a>
+  </div>
+ <!--  <a class="text-dark d-flex justify-content-center" href="{{ url_for('paymentCancelled', order_id=order_id) }}">
     <div id="cancelBtn">
       Cancel Order
     </div>
-  </a>
+  </a> -->
 </body>

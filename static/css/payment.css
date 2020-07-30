@@ -16,3 +16,14 @@
   font-style: italic;
 
 }
+
+a {
+  background-color: white;
+  color: #343a40;
+  
+  text-decoration: underline;
+}
+
+a:visited {
+  background-color: #ccc;
+}
