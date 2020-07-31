@@ -1676,6 +1676,7 @@ def detailed_routes():
             customers[order['name']['S']] = True
             
             name = order['name']['S'].split()
+            print(order)
             db.put_item(TableName='delivery_orders',
                         Item={
                             'delivery_id': {'N': str(i)},
@@ -1693,7 +1694,9 @@ def detailed_routes():
                             'delivery_region': {'S': 'US'},
                             'delivery_long': {'S': ''},
                             'delivery_lat': {'S': ''},
-                            'delivery_day': {'S': ''}})
+                            'delivery_day': {'S': ''},
+                            'kitchen_id': {'S': order['kitchen_id']['S']},
+                            'delivery_instructions': {'S': order['delivery_instructions']['S'] if 'delivery_instructions' in order else ''}})
     
     response = {'message': 'Request successful'}
     return response, 200
