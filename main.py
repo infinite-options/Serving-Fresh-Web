@@ -1676,7 +1676,6 @@ def detailed_routes():
             customers[order['name']['S']] = True
             
             name = order['name']['S'].split()
-            print(order)
             db.put_item(TableName='delivery_orders',
                         Item={
                             'delivery_id': {'N': str(i)},
