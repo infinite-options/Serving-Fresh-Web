@@ -212,9 +212,15 @@ def home():
     return render_template('home.html', title='Home')
 
 
-@app.route('/admin/notifications', methods=['GET', 'POST'])
+@app.route('/admin/notifications')
+@login_required
 def notifications():
     return render_template('notifications.html', title='Notifications')
+
+@app.route('/admin/sms')
+@login_required
+def sms():
+    return render_template('sms.html', title='SMS')
 
 
 @app.route('/accounts', methods=['GET', 'POST'])
