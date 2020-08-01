@@ -229,14 +229,22 @@ function sendToAll() {
   updateValidity()
   alert('Message sent successfully')
 }
+function formatPhoneNumber(number) {
+  let formattedNumber = ''
+  for (let char of number) {
+    if (char.match(/[0-9]/)) formattedNumber += char
+  }
+  if (formattedNumber.length === 10) formattedNumber = '+1'+formattedNumber
+  else formattedNumber = '+'+formattedNumber
+  return formattedNumber
+}
 function sendSMS() {
   let message = document.querySelector('#myTextBox').value
   let recipients = grid.gridOptions.api.getSelectedNodes()
   if (message === '' || recipients.length === 0) return
   let phones = []
   for (let node of recipients) {
-    let number = node.data.phone
-    if (number.length === 10) number = '+1'+number
+    let number = formatPhoneNumber(node.data.phone)
     if (phones.indexOf(number) === -1) phones.push(number)
   }
   const formData = new FormData()
