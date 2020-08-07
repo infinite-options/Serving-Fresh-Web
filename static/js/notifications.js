@@ -89,17 +89,16 @@ async function loadGroups() {
   savedGroups = data.Items
 }
 function openGroups() {
-  loadGroups().then(() => {
-    let modalBody = document.querySelector('#savedGroups')
-    modalBody.innerHTML = `<div class='list-group'>
-      ${savedGroups.map(group => `<div class='list-group-item list-group-item-action d-flex justify-content-between'
-      onclick='selectGroup("${group.group_name.S}")'>
-        ${group.group_name.S}
-        <i class='btn fas fa-times' onclick='deleteGroup("${group.group_id.S}")'></i>
-      </div>`).join('')}
-      ${savedGroups.length === 0 ? 'No saved groups' : ''}
-    </div>`
-  })
+  let groups = savedGroups.filter(group => group.group_name.S.indexOf('HISTORY_ID') === -1)
+  let modalBody = document.querySelector('#savedGroups')
+  modalBody.innerHTML = `<div class='list-group'>
+    ${groups.map(group => `<div class='list-group-item list-group-item-action d-flex justify-content-between'
+    onclick='selectGroup("${group.group_name.S}")'>
+      ${group.group_name.S}
+      <i class='btn fas fa-times' onclick='deleteGroup("${group.group_id.S}")'></i>
+    </div>`).join('')}
+    ${groups.length === 0 ? 'No saved groups' : ''}
+  </div>`
 }
 function selectGroup(name) {
   let customers = []
@@ -112,23 +111,21 @@ function selectGroup(name) {
     if (customers.indexOf(node.data.order_id) !== -1) {
       nodes.push(node)
     }
-  })
-  let alreadySelected = true
-  nodes.forEach(node => {
-    if (!node.selected) alreadySelected = false
-    node.setSelected(true)
-  });
-  if (alreadySelected) nodes.forEach(node => {
     node.setSelected(false)
   })
+  nodes.forEach(node => {
+    node.setSelected(true)
+  })
 }
-function deleteGroup(group_id) {
+async function deleteGroup(group_id) {
   let formData = new FormData()
   formData.append('group_id', group_id)
-  fetch(`${base_api}/delete_saved_notification_group`, {
+  await fetch(`${base_api}/delete_saved_notification_group`, {
     method: 'POST',
     body: formData
-  }).then(openGroups)
+  })
+  await loadGroups()
+  openGroups()
 }
 function saveGroup() {
   let recipients = grid.gridOptions.api.getSelectedNodes()
@@ -157,30 +154,30 @@ async function loadMessages() {
   savedMessages = data.Items
 }
 function openMessages() {
-  loadMessages().then(() => {
-    let modalBody = document.querySelector('#savedMessages')
-    modalBody.innerHTML = `<div class='list-group'>
-      ${savedMessages.map(msg => `<div class='list-group-item list-group-item-action d-flex justify-content-between'
-      onclick='selectMessage("${msg.message_payload.S}")'>
-        ${msg.message_name.S}
-        <i class='btn fas fa-times' onclick='deleteMessage("${msg.message_id.S}")'></i>
-      </div>`).join('')}
-      ${savedMessages.length === 0 ? 'No saved messages' : ''}
-    </div>`
-  })
+  let messages = savedMessages.filter(msg => msg.message_name.S.indexOf('HISTORY_ID') === -1)
+  let modalBody = document.querySelector('#savedMessages')
+  modalBody.innerHTML = `<div class='list-group'>
+    ${messages.map(msg => `<div class='list-group-item list-group-item-action d-flex justify-content-between'
+    onclick='selectMessage(\`${msg.message_payload.S}\`)'>
+      ${msg.message_name.S}
+      <i class='btn fas fa-times' onclick='deleteMessage("${msg.message_id.S}")'></i>
+    </div>`).join('')}
+    ${messages.length === 0 ? 'No saved messages' : ''}
+  </div>`
 }
-function deleteMessage(message_id) {
+async function deleteMessage(message_id) {
   let formData = new FormData()
   formData.append('message_id', message_id)
-  fetch(`${base_api}/delete_saved_notification_message`, {
+  await fetch(`${base_api}/delete_saved_notification_message`, {
     method: 'POST',
     body: formData
-  }).then(openMessages)
+  })
+  await loadMessages()
+  openMessages()
 }
 function selectMessage(msg) {
   let textBox = document.querySelector('#myTextBox')
-  if (textBox.value === msg) textBox.value = ''
-  else textBox.value = msg
+  textBox.value = msg
   updateValidity()
 }
 function saveMessage() {
@@ -193,7 +190,64 @@ function saveMessage() {
   fetch(`${base_api}/saved_notification_message`, {
     method: 'PUT',
     body: formData
-  }).then(openMessages)
+  }).then(() => loadMessages().then(openMessages))
+}
+async function saveHistory() {
+  let history_id = Math.random().toString(36).substr(2, 9)
+  let name = `HISTORY_ID(${history_id})`
+  let recipients = grid.gridOptions.api.getSelectedNodes().map(node => {
+    return {
+      'S': node.data.order_id
+    }
+  })
+  await fetch(`${base_api}/saved_notification_group`, {
+    method: 'PUT',
+    headers: {
+      'content-type': 'application/json'
+    },
+    body: JSON.stringify({
+      group_name: name,
+      customers: recipients
+    })
+  })
+  await loadGroups()
+  let msg = document.querySelector('#myTextBox').value
+  let formData = new FormData()
+  formData.append('message_name', name)
+  formData.append('message_payload', msg)
+  await fetch(`${base_api}/saved_notification_message`, {
+    method: 'PUT',
+    body: formData
+  })
+  await loadMessages()
+}
+function openHistory() {
+  let messages = savedMessages.filter(msg => msg.message_name.S.indexOf('HISTORY_ID') !== -1)
+  let groups = savedGroups.filter(group => group.group_name.S.indexOf('HISTORY_ID') !== -1)
+  let history = []
+  messages.forEach(msg => {
+    let matchingGroups = groups.filter(group => group.group_name.S === msg.message_name.S)
+    history.push([msg, matchingGroups[0]])
+  })
+  let modalBody = document.querySelector('#history')
+  modalBody.innerHTML = `<div class='list-group'>
+    ${history.map(entry => `<div class='list-group-item list-group-item-action'
+    onclick='selectHistory("${entry[0].message_payload.S}", "${entry[1].group_name.S}")'>
+      ${entry[0].created_date.S}
+      "${entry[0].message_payload.S}"
+      <i class='btn fas fa-times float-right' onclick='deleteHistory("${entry[0].message_id.S}", "${entry[1].group_id.S}")'></i>
+    </div>`).join('')}
+    ${messages.length === 0 ? 'No history' : ''}
+  </div>`
+}
+async function deleteHistory(message_id, group_id) {
+  await deleteMessage(message_id)
+  await deleteGroup(group_id)
+  openHistory()
+}
+function selectHistory(msg, group) {
+  selectMessage(msg)
+  selectGroup(group)
 }
 function sendMessage() {
   let message = document.querySelector('#myTextBox').value
@@ -211,8 +265,8 @@ function sendMessage() {
     method: 'POST',
     body: formData
   })
-  document.querySelector('#myTextBox').value = ''
-  updateValidity()
+  saveHistory()
+  updateValidity(false)
   alert('Message sent successfully')
 }
 function sendToAll() {
@@ -225,8 +279,8 @@ function sendToAll() {
     method: 'POST',
     body: formData
   })
-  document.querySelector('#myTextBox').value = ''
-  updateValidity()
+  saveHistory()
+  updateValidity(false)
   alert('Message sent successfully')
 }
 function formatPhoneNumber(number) {
@@ -254,8 +308,8 @@ function sendSMS() {
     method: 'POST',
     body: formData
   })
-  document.querySelector('#myTextBox').value = ''
-  updateValidity()
+  saveHistory()
+  updateValidity(false)
   alert('Message sent successfully')
 }
 function sendSMSToAll() {
@@ -273,21 +327,22 @@ function sendSMSToAll() {
     method: 'POST',
     body: formData
   })
-  document.querySelector('#myTextBox').value = ''
-  updateValidity()
+  saveHistory()
+  updateValidity(false)
   alert('Message sent successfully')
 }
-function updateValidity(type) {
+function updateValidity(validity) {
   let msgValid = document.querySelector('#myTextBox').value !== ''
   let recipientsValid = grid.gridOptions.api.getSelectedNodes().length > 0
+  let invalid = validity === false
   document.querySelector('#send').className = 'btn btn-secondary ' +
-    (!msgValid || !recipientsValid ? 'disabled' : '')
+    (!msgValid || !recipientsValid ||invalid ? 'disabled' : '')
   document.querySelector('#sendAll').className = 'btn btn-secondary ' +
-    (!msgValid ? 'disabled' : '')
+    (!msgValid || invalid ? 'disabled' : '')
   document.querySelector('#saveGroup').className = 'btn btn-secondary ' +
-    (!recipientsValid ? 'disabled' : '')
+    (!recipientsValid || invalid ? 'disabled' : '')
   document.querySelector('#saveMessage').className = 'btn btn-secondary ' +
-    (!msgValid ? 'disabled' : '')
+    (!msgValid || invalid ? 'disabled' : '')
 }
 
 window.onresize = resize
@@ -305,9 +360,6 @@ window.onload = () => {
       groupUseEntireRow: true,
       rowSelection: 'multiple'
     })
-    resize()
-    loadTable()
-    updateValidity()
   } else {
     type = 'sms'
     gridElement = document.querySelector('#smsGrid')
@@ -321,8 +373,10 @@ window.onload = () => {
       groupUseEntireRow: true,
       rowSelection: 'multiple'
     })
-    resize()
-    loadTable()
-    updateValidity()
   }
+  resize()
+  loadTable()
+  loadGroups()
+  loadMessages()
+  updateValidity()
 }
