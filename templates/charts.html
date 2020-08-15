@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+
+    <script type="text/javascript" src="{{ url_for('static', filename='js/charts.js') }}"></script>
+    <script type="text/javascript">
+        //calls getData from charts.js, passes data from backend
+        getData({{orders|tojson}})
+    </script>
+    <script src = "https://code.highcharts.com/highcharts.js"></script>
+    <link href="{{ url_for('.static', filename='css/charts.css') }}" rel="stylesheet" />
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Charts</title>
+</head>
+<body> 
+    <select name="cars" id="typeOfGraph" onchange="printGraph()">
+        <option selected value="all">All</option>
+        <option value="6b4c1557208649d9b4f5450d8a98a398">Esquivel Customers</option>
+        <option value="912592ed119046a08fad104bef0c3e70">Resendiz Customers </option>
+        <option value="allp">By Day</option>
+    </select>
+    <div id="halfDateContainer">
+        <label for="start">Start Date:</label>
+        <input type="month" id="halfDateStartCalender" name="trip-start" value="2020-04" min="2020-04" max="2099-12">
+        <label for="start">End Date:</label>
+        <input type="month" id="halfDateEndCalender" name="trip-start" value="2" min="2020-03" max="2099-12">
+    </div>
+    <div id="fullDateContainer">
+        <label for="start">Start Date:</label>
+        <input type="date" id="startCalender" name="trip-start" value="2020-04-02" min="2020-04-01" max="2099-12-31">
+        <label for="start">End Date:</label>
+        <input type="date" id="endCalender" name="trip-start" value="" min="2020-04-01" max="2099-12-31">
+    </div>
+    
+    
+    <button type="button" onClick="printGraph()">Apply</button>
+
+    <div id="container">
+    
+    </div>
+</body>
+</html>

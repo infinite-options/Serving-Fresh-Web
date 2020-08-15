@@ -1866,7 +1866,25 @@ def favorite(meal_id):
     
     response['message'] = 'Request successful'
     return response, 200
-
+#-----------------------------------------------------------------------------
+@app.route('/admin/chart')
+def chart():
+    
+    orders = db.scan(TableName='meal_orders',
+                     FilterExpression='kitchen_id = :value',
+                     ExpressionAttributeValues={
+                         ':value': {'S': '6b4c1557208649d9b4f5450d8a98a398'}
+                     })
+    ordersResendiz = db.scan(TableName='meal_orders',
+                     FilterExpression='kitchen_id = :value',
+                     ExpressionAttributeValues={
+                         ':value': {'S': '912592ed119046a08fad104bef0c3e70'}
+                     })
+    orders['Items'] = orders['Items'] + ordersResendiz['Items'];
+    print(orders['Items'])
+    print(len(orders['Items']))
+    return render_template("charts.html", orders= orders['Items'],)
+#-----------------------------------------------------------------------------
 
 @app.route('/email_test')
 def emailTest():
