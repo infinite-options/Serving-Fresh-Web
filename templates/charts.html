@@ -48,7 +48,7 @@
         <option selected value="all">All</option>
         <option value="6b4c1557208649d9b4f5450d8a98a398">Esquivel Customers</option>
         <option value="912592ed119046a08fad104bef0c3e70">Resendiz Customers </option>
-        <option value="allp">By Day</option>
+        <option value="ByDay">By Day</option>
     </select>
     <div id="halfDateContainer">
         <label for="start">Start Date:</label>
@@ -62,7 +62,14 @@
         <label for="start">End Date:</label>
         <input type="date" id="endCalender" name="trip-start" value="" min="2020-04-01" max="2099-12-31">
     </div>
-
+    <div id="kitchenSelectContainer">
+        <form id="myForm" action="">
+            <input checked type="checkbox" id="912592ed119046a08fad104bef0c3e70" name="" value="Resendiz">
+            <label for="">Resendiz</label>
+            <input checked type="checkbox" id="6b4c1557208649d9b4f5450d8a98a398" name="" value="Esquivel">
+            <label for="">Esquivel</label>
+        </form>      
+    </div>
 
     <button type="button" onClick="printGraph()">Apply</button>
 
