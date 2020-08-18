@@ -3,8 +3,21 @@
 let globalCustomerData;
 let globalOrderData;
 let globalID;
+
+let kitchenInfo = [
+    {
+        name: 'Resendiz',
+        id: '912592ed119046a08fad104bef0c3e70',
+    },
+    {
+        name: 'Esquivel',
+        id: '6b4c1557208649d9b4f5450d8a98a398',
+    },
+]
+
+let dayNames = ["Sun", "Mon", "Tue", "Wed", "Thur", "Fri", "Sat"]
+
 function getData (data){
-    
     console.log('Total number of orders: ', data.length);
     console.log(data);
     globalOrderData = data;
@@ -101,18 +114,22 @@ function printGraph(customers){
     //set date in end calender
     printCustomerVsOrderGraph(customers)
     let kitchenID = document.getElementById('typeOfGraph').value;
-    if(kitchenID === "allp"){
+    if(kitchenID === "ByDay"){
         console.log('About to print')
         printDayVsOrderGraph(customers);
     } 
-    if(document.getElementById('typeOfGraph').value !== "allp"){
+    //displays customer vs number of order graph
+    if(document.getElementById('typeOfGraph').value !== "ByDay"){
         document.getElementById("fullDateContainer").style.display = "none";
         document.getElementById("halfDateContainer").style.display = "inline-block";
-    
+        document.getElementById("kitchenSelectContainer").style.display = "none";
     }
-    if(document.getElementById('typeOfGraph').value === "allp"){
+    //disaplys date vs number of order
+    if(document.getElementById('typeOfGraph').value === "ByDay"){
         document.getElementById("fullDateContainer").style.display = "inline-block";
         document.getElementById("halfDateContainer").style.display = "none";
+        document.getElementById("kitchenSelectContainer").style.display = "inline-block";
+
     }
 }
 
@@ -191,11 +208,10 @@ function printCustomerVsOrderGraph(customers){
                         kitchen.time.forEach((time) => {
                             if(time.month === yValues[i].name){
                                 totalOrdersThisMonth += time.numOfOrdersDuringMonth;
-                                //didCustomerOrder = true
+                                
                             }
                         })
                     })
-                    //yValues[i].data.push(totalOrdersThisMonth)
                     totalOrder += totalOrdersThisMonth;
                     eachMonth.push({
                         month: yValues[i].name,
@@ -234,10 +250,10 @@ function printCustomerVsOrderGraph(customers){
         globalID = kitchenID;
         let customerArray = []
         customers.forEach((customer) => {
+
+            //check if customer has ordered from correct kitchen during giving time
             let didCustomerOrder = false
-            
             yValues.forEach((month) => {
-                //console.log(month.name)
                 customer.kitchens.forEach((kitchen) => {
                     let kitchenFound = false
                     if(kitchen.id === kitchenID)
@@ -276,6 +292,8 @@ function printCustomerVsOrderGraph(customers){
                 })
             }
         })
+
+
         //sort customers by number of orders
         customerArray.sort((a,b) => a.totalNumberOfOrders - b.totalNumberOfOrders);
         console.log(customerArray)
@@ -343,12 +361,11 @@ function printCustomerVsOrderGraph(customers){
               }
            },
            column: {
-            stacking: 'normal',
-            dataLabels: {
-                enabled: true
-            },
-        }
-
+               stacking: 'normal',
+               dataLabels: {
+                   enabled: true
+                },
+            }
         };
         var legend = {
            backgroundColor: (
@@ -385,6 +402,18 @@ function printCustomerVsOrderGraph(customers){
         name: 'May',
         data: [],
     }]
+    ---------------------------
+    let yValues = [{
+        name: 'Esquivel',
+        id:
+        data: [0, 3,7],
+    }, {
+        name: 'Resendiz',
+        data: [2, 2, 3],
+    }, {
+        name: 'May',
+        data: [],
+    }]
     */
 }
 
@@ -392,7 +421,7 @@ function printDayVsOrderGraph(customers){
     //Esquivel: 6b4c1557208649d9b4f5450d8a98a398
     orders = globalOrderData
     let days = []
-    let numOfOrders = []
+    let yValues = []
     let now = new Date();
     console.log(now)
     //create x-axis labels, we want each day to have a bar
@@ -402,6 +431,7 @@ function printDayVsOrderGraph(customers){
     let end = document.getElementById('endCalender').valueAsDate
     end.setDate(end.getDate() + 1)
     for (start; start <= end; start.setDate(start.getDate() + 1)) {
+        //console.log(start.getDate())
         let month = parseInt(start.getMonth());
         month += 1;
         let day = parseInt(start.getDate())
@@ -411,22 +441,56 @@ function printDayVsOrderGraph(customers){
         if(month < 10){
             month = '0' + month.toString();
         }
-        let date = month + '-' + day;
+        let date = month + '-' + day +  ' ' + dayNames[start.getDay()];
         //console.log(date)
         days.push(date)
     }
     console.log(days)
-    //find # of order for each day and push into array
+
+    //fill out yValues, get name and id of each kitchen and palce into
+    for(let kitchenIndex=0; kitchenIndex < kitchenInfo.length; kitchenIndex++){
+        let form = document.getElementById("myForm")
+        for (let formIndex = 0; formIndex < form.elements.length; formIndex++ ){
+            if (form.elements[formIndex].type == 'checkbox' && form.elements[formIndex].checked == true & form.elements[formIndex].id == kitchenInfo[kitchenIndex].id){
+                console.log('Push')
+                yValues.push({
+                    name: kitchenInfo[kitchenIndex].name,
+                    id: kitchenInfo[kitchenIndex].id,
+                    data: [],
+                })
+            }
+        }
+    }
+         
+    //loop through each day in day array
     days.forEach((day) => {
-        let totalOrdersToday = 0
-        //loop through order data to find orders created on certain day
-        orders.forEach((order) => {
-            if(order.created_at.S.substr(5,5) === day){
-                totalOrdersToday += 1
-            }   
-        })
-        numOfOrders.push(totalOrdersToday)
+        for(let i=0; i< yValues.length; i++){
+            let totalOrdersToday = 0;
+            //loop through each order to find orders created on certain day and certain restaurant
+            for(let ordersIndex=0; ordersIndex < orders.length; ordersIndex++){
+                if(orders[ordersIndex].created_at.S.substr(5,5) === day.substr(0,5) && orders[ordersIndex].kitchen_id.S === yValues[i].id){
+                    totalOrdersToday += 1;
+                }   
+            }
+            yValues[i].data.push(totalOrdersToday)
+        }
+
     })
+    console.log(yValues)
+    //console.log(yValues)
+    /*
+    let yValues = [{
+        name: 'Esquivel',
+        id:
+        data: [0, 3,7],
+    }, {
+        name: 'Resendiz',
+        data: [2, 2, 3],
+    }, {
+        name: 'May',
+        data: [],
+    }]
+    */
     //displays graph
     $(document).ready(function() {  
         var chart = {
@@ -446,33 +510,53 @@ function printDayVsOrderGraph(customers){
            }
         };
         var yAxis = {
-           min: 0,
-           title: {
-              text: 'Number of Orders'         
-           }      
+            min: 0,
+            title: {
+               text: 'Number of Orders',
+               align: 'high'
+            },
+            labels: {
+               overflow: 'justify'
+            },
+            stackLabels: {
+             enabled: true,
+             style: {
+                 fontWeight: 'bold',
+                 color: ( // theme
+                     Highcharts.defaultOptions.title.style &&
+                     Highcharts.defaultOptions.title.style.color
+                 ) || 'gray'
+             }
+             }
         };
         var tooltip = {
-           headerFormat: '<span style = "font-size:10px">{point.key}</span><table>',
-          
-           footerFormat: '</table>',
-           shared: true,
-           useHTML: true
+ 
         };
         var plotOptions = {
-           column: {
-              pointPadding: 0.2,
-              borderWidth: 0
-           }
-        };  
+            bar: {
+               dataLabels: {
+                  enabled: true
+               }
+            },
+            column: {
+                stacking: 'normal',
+                dataLabels: {
+                    enabled: true
+                 },
+             }
+         };
+         var legend = {
+            backgroundColor: (
+               (Highcharts.theme && Highcharts.theme.legendBackgroundColor) ||
+                  '#FFFFFF'),
+            shadow: true
+         };
         var credits = {
            enabled: false
         };
-        var series= [{
-            name: "Number of Orders",
-            data: numOfOrders,
-        }];
+        var series= yValues;
  
-     
+    
         var json = {};   
         json.chart = chart; 
         json.title = title;   
