@@ -1,5 +1,5 @@
-// let base_api = 'https://phaqvwjbw6.execute-api.us-west-1.amazonaws.com/dev/api/v1'
-let base_api = 'http://localhost:5000/api/v1'
+let base_api = 'https://phaqvwjbw6.execute-api.us-west-1.amazonaws.com/dev/api/v1'
+// let base_api = 'http://localhost:5000/api/v1'
 let savedGroups = []
 let savedMessages = []
 let colDefs = [
