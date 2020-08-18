@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}" type="image/x-icon">
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}" type="image/x-icon">
     <title>Customer By Item</title>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <script type=text/javascript>
-      
+
     </script>
   </head>
   <body>
@@ -21,7 +23,7 @@
             <div class="border-bottom mb-4 ml-4 d-flex justify-content-between">  <!-- this is spacing below Join Today text -->
               <span class="display-4 page-header-title">Customer By Item</span>
             </div>
-            
+
             <div class="mb-4 ml-4 d-flex justify-content-between">  <!-- this is spacing below Join Today text -->
               <span class="display-4 page-header-title">Filters: </span>
               <button class="btn btn-default btn-sm " type="button" >
@@ -37,7 +39,7 @@
                 <a href="{{ url_for('adminreportFilter', sort='3') }}">Customer by Item</a>
               </button>
             </div>
-            
+
             <!--
             <div class="border-top ml-4 p-2 mb-1 mt-1">
             <table class='table table-borderless mb-0'>
@@ -82,8 +84,8 @@
                     {% for item in order.order_items.L %}
                       {% if item.M.meal_id and item.qty != 0 and item.photo %}
                         <div class="border border-gray mb-2 mt-2 order-item-box">
-                            {% if item.photo %}  
-                              <img src={{item.photo.S}} class="card-img-top float-left" style="max-width:120px; height:90px"> 
+                            {% if item.photo %}
+                              <img src={{item.photo.S}} class="card-img-top float-left" style="max-width:120px; height:90px">
                             {% endif %}
                             <span class="align-top list-inline-item float-left ml-2">
                               <p class="item-title display-4"> {{ item.M.meal_name.S }} </p>

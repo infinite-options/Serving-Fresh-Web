@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}" type="image/x-icon">
+  <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}" type="image/x-icon">
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <!-- jquery script -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+  <!-- JavaScript  -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js " integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1 " crossorigin="anonymous ">
+  </script>
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <!-- new-bootstrap-js -->
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+  <!-- new-bootstrap-css -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+  <!-- highcharts script -->
+  <script src="https://code.highcharts.com/highcharts.js"></script>
+
+  <title>Admin - Charts</title>
+</head>
+
+<body>
+  <div class="login-flash">
+    <div class="col-md-12">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">
+              {{ message }}
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+    </div>
+  </div>
+
+  <nav class="navbar navbar-expand-sm navbar-dark bg-secondary m-0">
+    <ul class='navbar-nav'>
+      <li class='nav-item'>
+        <a class='nav-link' href="{{url_for('notifications')}}">Notifications</a>
+      </li>
+      <li class='nav-item'>
+        <a class='nav-link' href="{{url_for('sms')}}">SMS</a>
+      </li>
+      <li class='nav-item'>
+        <a class="nav-link" href="{{ url_for('chart') }}"> Analytics </a>
+      </li>
+    </ul>
+    <a class='navbar-brand' href='#'>Revenue</a>
+
+    <div class='dropdown dropleft ml-auto'>
+      <button class="btn btn-primary dropdown-toggle" data-toggle="dropdown" id='dropdownTitle'>
+        Select kitchen
+      </button>
+      <div class="dropdown-menu">
+        <a class="dropdown-item" onclick="loadKitchen()">All kitchens</a>
+        {% for kitchen in kitchens %}
+          <a class="dropdown-item" onclick="loadKitchen(`{{kitchen.kitchen_id.S}}`, `{{kitchen.kitchen_name.S}}`)">
+            {{kitchen.kitchen_name.S}}
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+  </nav>
+
+  <div id="container" style="width:100%; height:600px;"></div>
+  <script>
+    let days, chart
+    async function loadData(kitchen_id) {
+      let res
+      if (kitchen_id)
+        res = await fetch("{{url_for('meal_orders')}}?kitchen_id="+kitchen_id)
+      else res = await fetch("{{url_for('meal_orders')}}")
+      let data = await res.json()
+      days = {}
+      let customers = []
+      data.Items.forEach(order => {
+        let day = order.created_at.S.split('T')[0]
+        let value = parseFloat(order.totalAmount.N)
+        let name = order.name.S
+        let kitchen = order.kitchen_id.S
+        if (days.hasOwnProperty(day)) {
+          days[day].value += value
+          if (days[day].customers.indexOf(name) === -1) {
+            if (customers.indexOf(name) !== -1) days[day].returnCustomers += 1
+            else {
+              days[day].newCustomers += 1
+              customers.push(name)
+            }
+            days[day].customers.push(name)
+          }
+        } else {
+          days[day] = {value: value, customers: [name], returnCustomers: 0, newCustomers: 0}
+          if (customers.indexOf(name) !== -1) days[day].returnCustomers += 1
+          else {
+            days[day].newCustomers += 1
+            customers.push(name)
+          }
+        }
+      })
+    }
+    function loadChart() {
+      let daysArray = []
+      Object.keys(days).forEach(key => {
+        daysArray.push({day: key, value: days[key].value, customers: days[key].customers,
+          returnCustomers: days[key].returnCustomers, newCustomers: days[key].newCustomers})
+      })
+      daysArray.sort((a, b) => a.day < b.day ? -1 : a.day > b.day ? 1 : 0)
+      let lastValue = 0
+      let cumulativeProfit = []
+      let returnCustomers = []
+      let newCustomers = []
+      daysArray.forEach(entry => {
+        lastValue += entry.value
+        cumulativeProfit.push(parseFloat(lastValue.toFixed(2)))
+        entry.value = parseFloat(entry.value.toFixed(2))
+        returnCustomers.push(entry.returnCustomers)
+        newCustomers.push(entry.newCustomers)
+      })
+      console.log(returnCustomers)
+      chart = Highcharts.chart('container', {
+        title: {
+            text: 'Revenue Analysis'
+        },
+        xAxis: {
+          categories: daysArray.map(entry => entry.day)
+        },
+        yAxis: [{
+            min: 0,
+            title: {
+                text: 'Daily Revenue ($)'
+            }
+        }, {
+            min: 0,
+            title: {
+                text: 'Cumulative Revenue ($)'
+            }
+        }, {
+            min: 0,
+            title: {
+                text: 'Number of Customers'
+            },
+            opposite: true
+        }],
+        plotOptions: {
+          column: {
+            stacking: 'normal'
+          }
+        },
+        series: [{
+          type: 'column',
+          name: 'New Customers',
+          showInLegend: false,
+          data: newCustomers,
+          tooltip: {
+            pointFormat: '{series.name}: <b>{point.y}</b><br/>Total: <b>{point.stackTotal}</b>'
+          },
+          yAxis: 2
+        }, {
+          type: 'column',
+          name: 'Return Customers',
+          showInLegend: false,
+          data: returnCustomers,
+          tooltip: {
+            pointFormat: '{series.name}: <b>{point.y}</b><br/>Total: <b>{point.stackTotal}</b>'
+          },
+          yAxis: 2
+        }, {
+          name: 'Cumulative Revenue',
+          showInLegend: false,
+          data: cumulativeProfit,
+          tooltip: {
+            pointFormat: '{series.name}: <b>${point.y}</b>'
+          },
+          yAxis: 1
+        }, {
+          name: 'Daily Revenue',
+          showInLegend: false,
+          data: daysArray.map(entry => entry.value),
+          tooltip: {
+            pointFormat: '{series.name}: <b>${point.y}</b>'
+          }
+        }]
+      });
+    }
+    function loadKitchen(kitchen_id, kitchen_name) {
+      if (!kitchen_id) kitchen_name = 'All kitchens'
+      document.querySelector('#dropdownTitle').innerHTML = kitchen_name
+      loadData(kitchen_id).then(loadChart)
+    }
+    window.onload = () => {
+      loadKitchen()
+    }
+  </script>
+</body>
+</html>

@@ -1,7 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}" type="image/x-icon">
+  <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}" type="image/x-icon">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+
+    <!-- JavaScript  -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js " integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1 " crossorigin="anonymous ">
+    </script>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <!-- new-bootstrap-js -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+    <!-- new-bootstrap-css -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
 
     <script type="text/javascript" src="{{ url_for('static', filename='js/charts.js') }}"></script>
     <script type="text/javascript">
@@ -15,7 +27,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Charts</title>
 </head>
-<body> 
+<body>
+  <nav class="navbar navbar-expand-sm navbar-dark bg-secondary m-0">
+    <ul class='navbar-nav'>
+      <li class='nav-item'>
+        <a class='nav-link' href="{{url_for('notifications')}}">Notifications</a>
+      </li>
+      <li class='nav-item'>
+        <a class="nav-link" href="{{ url_for('sms') }}"> SMS </a>
+      </li>
+    </ul>
+    <a class='navbar-brand' href='#'>Analytics</a>
+    <ul class='navbar-nav'>
+      <li class='nav-item'>
+        <a class="nav-link" href="{{ url_for('revenueChart') }}">Revenue</a>
+      </li>
+    </ul>
+  </nav>
     <select name="cars" id="typeOfGraph" onchange="printGraph()">
         <option selected value="all">All</option>
         <option value="6b4c1557208649d9b4f5450d8a98a398">Esquivel Customers</option>
@@ -40,14 +68,13 @@
             <label for="">Resendiz</label>
             <input checked type="checkbox" id="6b4c1557208649d9b4f5450d8a98a398" name="" value="Esquivel">
             <label for="">Esquivel</label>
-        </form>
-        
+        </form>      
     </div>
-    
+
     <button type="button" onClick="printGraph()">Apply</button>
 
     <div id="container">
-    
+
     </div>
 </body>
 </html>

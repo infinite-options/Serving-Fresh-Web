@@ -1,6 +1,8 @@
 {% extends "main.html" %} {% block content %}
 
 	<head>
+	  <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}" type="image/x-icon">
+	  <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}" type="image/x-icon">
 		<title>{{ kitchen_name }}</title>
 		<!-- style sheet -->
 		<link rel="stylesheet" href="{{ url_for('.static', filename='css/businessSettings.css') }}">

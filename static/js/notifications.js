@@ -14,7 +14,8 @@ let colDefs = [
   {headerName: 'Kitchen', field: 'kitchen'},
   {headerName: '# Orders', field: 'n_orders'},
   {headerName: 'Created', field: 'first_order'},
-  {headerName: 'Last Order', field: 'last_order'}
+  {headerName: 'Last Order', field: 'last_order'},
+  {headerName: 'App Version', field: 'appVersion'}
 ]
 colDefs.forEach(colDef => {
   if (colDef.field) colDef.sortable = true
@@ -74,7 +75,8 @@ async function loadTable() {
       n_orders: item.number_of_orders.S,
       order_id: item.order_id.S,
       first_order: item.created_at.S.slice(0, 10),
-      last_order: item.last_order_date.S.slice(0, 10)
+      last_order: item.last_order_date.S.slice(0, 10),
+      appVersion: item.appVersion ? item.appVersion.S : '-'
     })
   })
   rowData.forEach(row => {
