@@ -1880,9 +1880,7 @@ def chart():
                      ExpressionAttributeValues={
                          ':value': {'S': '912592ed119046a08fad104bef0c3e70'}
                      })
-    orders['Items'] = orders['Items'] + ordersResendiz['Items'];
-    print(orders['Items'])
-    print(len(orders['Items']))
+    orders['Items'] = orders['Items'] + ordersResendiz['Items']
     return render_template("charts.html", orders= orders['Items'],)
 
 @app.route('/api/meal_orders')
