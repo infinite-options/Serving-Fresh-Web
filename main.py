@@ -118,10 +118,10 @@ def delete_s3_img(bucket, key):
         delete_file = s3.delete_object(
             Bucket=bucket,
             Key=key)
-    
+
     except:
         print('Item cannot be deleted')
-    
+
     return None
 
 
@@ -131,7 +131,7 @@ def delete_s3_img(bucket, key):
 class User(UserMixin):
     def __init__(self, id):
         self.id = id
-    
+
     @staticmethod
     def get(user_id):
         return User(user_id)
@@ -172,7 +172,7 @@ def paymentComplete(order_id):
     if orders is not None:
         email_tag = 'email_'+orders['Items'][0]['email']['S'].lower()
         endpoint = 'https://phaqvwjbw6.execute-api.us-west-1.amazonaws.com/dev/api/v1/send_notification'
-        payload = {'tags':email_tag, 
+        payload = {'tags':email_tag,
                     'message':'Payment received'}
         r = requests.post(url = endpoint, data = payload)
 
@@ -240,10 +240,10 @@ def login():
                             ExpressionAttributeValues={
                                 ':val': {'S': email}
                             })
-            
+
             if user.get('Count') == 0:
                 return render_template('login.html', title='Login', form=form)
-            
+
             if not check_password_hash(user['Items'][0]['password']['S'], password):
                 return render_template('login.html', title='Login', form=form)
             else:
@@ -253,7 +253,7 @@ def login():
                 login_session['email'] = email
                 login_user(User(user_id))
                 return redirect(url_for('kitchen', id=login_session['user_id']))
-        
+
         except Exception as e:
             print(e)
             return render_template('login.html', title='Login', form=form)
@@ -347,7 +347,7 @@ def register():
             reusable = True
         if form.cancellation.data == 'canCancel':
             canCancel = True
-        
+
         acceptingHours = [{'M': {'is_accepting': {'BOOL': form.isAcceptingSunday.data},
                                  'open_time': {'S': form.acceptingOpenTimeSunday.data.strftime('%H:%M')},
                                  'close_time': {'S': form.acceptingCloseTimeSunday.data.strftime('%H:%M')}}},
@@ -369,7 +369,7 @@ def register():
                           {'M': {'is_accepting': {'BOOL': form.isAcceptingSaturday.data},
                                  'open_time': {'S': form.acceptingOpenTimeSaturday.data.strftime('%H:%M')},
                                  'close_time': {'S': form.acceptingCloseTimeSaturday.data.strftime('%H:%M')}}}]
-        
+
         deliveryHours = [{'M': {'is_delivering': {'BOOL': form.isAcceptingSunday.data},
                                 'open_time': {'S': form.acceptingOpenTimeSunday.data.strftime('%H:%M')},
                                 'close_time': {'S': form.acceptingCloseTimeSunday.data.strftime('%H:%M')}}},
@@ -391,16 +391,16 @@ def register():
                          {'M': {'is_delivering': {'BOOL': form.isDeliveringSaturday.data},
                                 'open_time': {'S': form.deliveryOpenTimeSaturday.data.strftime('%H:%M')},
                                 'close_time': {'S': form.deliveryCloseTimeSaturday.data.strftime('%H:%M')}}}]
-        
+
         created_at = datetime.now(tz=timezone('US/Pacific')).strftime('%Y-%m-%dT%H:%M:%S')
         kitchen_id = uuid.uuid4().hex
-        
+
         photoPath = 'https://servingnow.s3-us-west-1.amazonaws.com/kitchen_imgs/landing-logo.png'
-        
+
         if form.kitchenImage.data:
             photo_key = 'kitchen_imgs/{}'.format(str(kitchen_id))
             photoPath = upload_s3_img(form.kitchenImage.data, BUCKET_NAME, photo_key)
-        
+
         add_kitchen = db.put_item(TableName='kitchens',
                                   Item={'kitchen_id': {'S': kitchen_id},
                                         'accepting_hours': {'L': acceptingHours},
@@ -434,7 +434,7 @@ def register():
                                   )
         flash('Your account has been created! You are now able to log in.', 'success')  # python 3 format.
         return redirect(url_for('login'))
-    
+
     return render_template('register.html', title='Register',
                            form=form)  # This is what happens if the submit is unsuccessful with errors highlighted
 
@@ -477,7 +477,7 @@ def kitchen(id):
     kitchen_id = current_user.get_id()
     apiURL = API_BASE_URL + '/api/v1/meals/' + kitchen_id
     # apiURL = 'http://localhost:5000/api/v1/meals/' + current_user.get_id()
-    
+
     # print('API URL: ' + str(apiURL))
     # apiURL = API_BASE_URL + '/api/v1/meals/' + '5d114cb5c4f54c94a8bb4d955a576fca'
     response = requests.get(apiURL)
@@ -487,7 +487,7 @@ def kitchen(id):
     #
     todays_date = datetime.now(tz=timezone('US/Pacific')).strftime('%Y-%m-%d')
     todays_datetime = datetime.now(tz=timezone('US/Pacific')).strftime('%Y-%m-%dT%H:%M:%S')
-    
+
     # allMeals = db.scan(
     #     TableName='meals',
     #     FilterExpression='kitchen_id = :val',
@@ -495,12 +495,12 @@ def kitchen(id):
     #         ':val': {'S': login_session['user_id']},
     #     }
     # )
-    
+
     meals = {}
     previousMeals = {}
     mealItems = []
     previousMealsItems = []
-    
+
     # Close the business if 0 meals
     if allMeals == []:
         db.update_item(TableName='kitchens',
@@ -510,7 +510,7 @@ def kitchen(id):
                            ':val': {'BOOL': False}
                        }
                        )
-    
+
     for meal in allMeals:
         twelveHourTime = datetime.strptime(meal['created_at']['S'][11:16], '%H:%M')
         meal['order_time'] = twelveHourTime.strftime('%I:%M %p')
@@ -519,13 +519,13 @@ def kitchen(id):
             mealItems.append(meal)
         else:
             previousMealsItems.append(meal)
-    
+
     meals['Items'] = sorted(mealItems, key=itemgetter('order_time'), reverse=True)
     previousMeals['Items'] = sorted(previousMealsItems, key=itemgetter('order_time'), reverse=True)
-    
+
     # print('\n\n' + str(meals) + '\n\n')
     # print('\n\n' + str(previousMeals) + '\n\n')
-    
+
     todaysMenu = meals['Items']
     pastMenu = previousMeals['Items']
     #
@@ -534,20 +534,20 @@ def kitchen(id):
     #
     # todaysMenu = allMeals['Items']
     # pastMenu = previousMeals['Items']
-    
+
     if todaysMenu == None:
         todaysMenu = []
-    
+
     kitchen = db.scan(TableName='kitchens',
                       FilterExpression='kitchen_id = :value',
                       ExpressionAttributeValues={
                           ':value': {'S': current_user.get_id()},
                       }
                       )
-    
+
     description = kitchen['Items'][0]['description']['S']
     kitchenImage = kitchen['Items'][0]['kitchen_image']['S']
-    
+
     return render_template('kitchen.html',
                            description=description,
                            kitchenName=login_session['kitchen_name'],
@@ -586,7 +586,7 @@ def kitchenSettings(id):
             reusable = True
         if form.cancellation.data == 'canCancel':
             canCancel = True
-        
+
         acceptingHours = [{'M': {'is_accepting': {'BOOL': form.isAcceptingSunday.data},
                                  'open_time': {'S': form.acceptingOpenTimeSunday.data.strftime('%H:%M')},
                                  'close_time': {'S': form.acceptingCloseTimeSunday.data.strftime('%H:%M')}}},
@@ -608,7 +608,7 @@ def kitchenSettings(id):
                           {'M': {'is_accepting': {'BOOL': form.isAcceptingSaturday.data},
                                  'open_time': {'S': form.acceptingOpenTimeSaturday.data.strftime('%H:%M')},
                                  'close_time': {'S': form.acceptingCloseTimeSaturday.data.strftime('%H:%M')}}}]
-        
+
         deliveryHours = [{'M': {'is_delivering': {'BOOL': form.isDeliveringSunday.data},
                                 'open_time': {'S': form.deliveryOpenTimeSunday.data.strftime('%H:%M')},
                                 'close_time': {'S': form.deliveryCloseTimeSunday.data.strftime('%H:%M')}}},
@@ -630,14 +630,14 @@ def kitchenSettings(id):
                          {'M': {'is_delivering': {'BOOL': form.isDeliveringSaturday.data},
                                 'open_time': {'S': form.deliveryOpenTimeSaturday.data.strftime('%H:%M')},
                                 'close_time': {'S': form.deliveryCloseTimeSaturday.data.strftime('%H:%M')}}}]
-        
+
         photoPath = kitchen['kitchen_image']['S']
         if form.kitchenImage.data:
             kitchen_id = login_session['user_id']
             photo_key = 'kitchen_imgs/{}'.format(str(kitchen_id))
             delete_s3_img(BUCKET_NAME, photo_key)
             photoPath = upload_s3_img(form.kitchenImage.data, BUCKET_NAME, photo_key)
-        
+
         db.update_item(TableName='kitchens',
                        Key={'kitchen_id': {'S': id}},
                        UpdateExpression='SET accepting_hours = :ah, \
@@ -691,10 +691,10 @@ def kitchenSettings(id):
                            ':z': {'S': form.zipcode.data},
                        }
                        )
-        
+
         login_session['kitchen_name'] = form.kitchenName.data
         login_session['email'] = form.email.data.lower()
-        
+
         flash('Your account has been updated!', 'success')
         return redirect(url_for('kitchenSettings', id=current_user.get_id()))
     elif request.method == 'GET':
@@ -791,7 +791,7 @@ def kitchenSettings(id):
         form.state.data = kitchen['st']['S']
         form.city.data = kitchen['city']['S']
         form.street.data = kitchen['street']['S']
-    
+
     return render_template('kitchenSettings.html', form=form, id=id, kitchenName=login_session['kitchen_name'])
 
 
@@ -802,17 +802,17 @@ def postMeal():
     price = request.form.get('price')
     photo = request.files.get('photo')
     itemsData = request.form.get('items')
-    
+
     if name == None or price == None or photo == None or itemsData == None:
         return
-    
+
     kitchen_id = current_user.get_id()
-    
+
     meal_id = uuid.uuid4().hex
     created_at = datetime.now(tz=timezone('US/Pacific')).strftime('%Y-%m-%dT%H:%M:%S')
-    
+
     meal_items = json.loads(itemsData)
-    
+
     items = []
     for i in meal_items['meal_items']:
         item = {}
@@ -821,17 +821,17 @@ def postMeal():
         item['qty'] = {}
         item['qty']['N'] = str(i['qty'])
         items.append(item)
-    
+
     description = [{'M': i} for i in items]
-    
+
     # try:
     photo_key = 'meals_imgs/{}_{}'.format(str(kitchen_id), str(meal_id))
     photoPath = upload_s3_img(photo, BUCKET_NAME, photo_key)
-    
+
     if photoPath == None:
         raise BadRequest('Request failed. \
             Something went wrong uploading a photo.')
-    
+
     add_meal = db.put_item(TableName='meals',
                            Item={'meal_id': {'S': meal_id},
                                  'created_at': {'S': created_at},
@@ -846,7 +846,7 @@ def postMeal():
                                  'count_all': {'N': '0'}
                                  }
                            )
-    
+
     kitchen = db.update_item(TableName='kitchens',
                              Key={'kitchen_id': {'S': str(kitchen_id)}},
                              UpdateExpression='SET isOpen = :val',
@@ -854,10 +854,10 @@ def postMeal():
                                  ':val': {'BOOL': True}
                              }
                              )
-    
+
     # print('kitchen:' + kitchen)
     # Technical debt that needs to be solved
-    
+
     response = {'message': 'Request successful'}
     return response, 200
     # except:
@@ -868,7 +868,7 @@ def postMeal():
 @login_required
 def renewPastMeals():
     todays_datetime = datetime.now(tz=timezone('US/Pacific')).strftime('%Y-%m-%dT%H:%M:%S')
-    
+
     allMeals = db.scan(
         TableName='meals',
         FilterExpression='kitchen_id = :val',
@@ -876,7 +876,7 @@ def renewPastMeals():
             ':val': {'S': login_session['user_id']},
         }
     )
-    
+
     for meal in allMeals['Items']:
         renewedMeal = db.update_item(TableName='meals',
                                      Key={'meal_id': {'S': str(meal['meal_id']['S'])}},
@@ -884,7 +884,7 @@ def renewPastMeals():
                                      ExpressionAttributeValues={
                                          ':val': {'S': todays_datetime}}
                                      )
-    
+
     return redirect(url_for('kitchen', id=login_session['user_id']))
 
 
@@ -892,7 +892,7 @@ def renewPastMeals():
 @login_required
 def renewIndvPastMeal(id):
     todays_datetime = datetime.now(tz=timezone('US/Pacific')).strftime('%Y-%m-%dT%H:%M:%S')
-    
+
     try:
         update_meal = db.update_item(TableName='meals',
                                      Key={'meal_id': {'S': str(id)}},
@@ -904,7 +904,7 @@ def renewIndvPastMeal(id):
                                      })
     except:
         flash('Meal not found.', 'danger')
-    
+
     return redirect(url_for('kitchen', id=login_session['user_id']))
 
 
@@ -916,7 +916,7 @@ def editMeal(meal_id):
     photo = request.files.get('photo')
     items_data = request.form.get('items')
     limit = request.form.get('limit')
-    
+
     if name != None:
         update_meal = db.update_item(TableName='meals',
                                      Key={'meal_id': {'S': meal_id}},
@@ -925,7 +925,7 @@ def editMeal(meal_id):
                                          ':n': {'S': str(name)}
                                      }
                                      )
-    
+
     if price != None:
         update_meal = db.update_item(TableName='meals',
                                      Key={'meal_id': {'S': meal_id}},
@@ -934,11 +934,11 @@ def editMeal(meal_id):
                                          ':n': {'S': str(price)}
                                      }
                                      )
-    
+
     if photo != None:
         photo_key = 'meals_imgs/{}_{}'.format(str(current_user.get_id()), str(meal_id))
         photoPath = upload_s3_img(photo, BUCKET_NAME, photo_key)
-        
+
         update_meal = db.update_item(TableName='meals',
                                      Key={'meal_id': {'S': meal_id}},
                                      UpdateExpression='SET photo = :n',
@@ -946,10 +946,10 @@ def editMeal(meal_id):
                                          ':n': {'S': photoPath}
                                      }
                                      )
-    
+
     if items_data != None:
         meal_items = json.loads(items_data)
-        
+
         items = []
         for i in meal_items['meal_items']:
             item = {}
@@ -958,9 +958,9 @@ def editMeal(meal_id):
             item['qty'] = {}
             item['qty']['N'] = str(i['qty'])
             items.append(item)
-        
+
         description = [{'M': i} for i in items]
-        
+
         update_meal = db.update_item(TableName='meals',
                                      Key={'meal_id': {'S': meal_id}},
                                      UpdateExpression='SET description = :n',
@@ -978,7 +978,7 @@ def adminreportFilterStatus(order_id, status):
         newStatus = "delivered"
     else:
         newStatus = "open"
-    
+
     db.update_item(
         TableName='meal_orders',
         Key={
@@ -994,7 +994,7 @@ def adminreportFilterStatus(order_id, status):
             ':val2': {'S': order_id}
         }
     )
-    
+
     return redirect(url_for('adminreport'))
 
 
@@ -1002,12 +1002,12 @@ def adminreportFilterStatus(order_id, status):
 @login_required
 def adminreportFilter(sort):
     dataFilter = sort
-    
+
     if 'kitchen_name' not in login_session:
         return redirect(url_for('index'))
-    
+
     todays_date = datetime.now(tz=timezone('US/Pacific')).strftime('%Y-%m-%d')
-    
+
     orders = db.scan(TableName='meal_orders',
                      FilterExpression='#order_status = :val1',
                      ExpressionAttributeValues={
@@ -1017,35 +1017,35 @@ def adminreportFilter(sort):
                          '#order_status': 'status'
                      }
                      )
-    
+
     allMeals = db.scan(
         TableName='meals'
     )
-    
+
     meals = {}
     previousMeals = {}
     mealItems = []
     previousMealsItems = []
-    
+
     for meal in allMeals['Items']:
         mealItems.append(meal)
-    
+
     meals['Items'] = mealItems
     previousMeals['Items'] = previousMealsItems
-    
+
     todaysMenu = meals['Items']
     pastMenu = previousMeals['Items']
-    
+
     if todaysMenu == None:
         todaysMenu = []
-    
+
     totalRevenue = 0.0
     totalMealQuantity = {}
     for order in orders['Items']:
         for item in order['order_items']['L']:
             order_id = item['M']['meal_id']['S']
             order_id_str = str(order_id)
-            
+
             meal = db.query(
                 TableName='meals',
                 KeyConditionExpression='meal_id = :value',
@@ -1053,11 +1053,11 @@ def adminreportFilter(sort):
                     ':value': {'S': order_id}
                 }
             )
-            
+
             if meal['Items']:
                 mealInfo = meal['Items'][0]
                 mealDescrip = mealInfo['description']['L'][0]['M']
-                
+
                 # TODO add meal specific price
                 item['photo'] = mealInfo['photo']
                 item['qty'] = int(item['M']['qty']['N'])
@@ -1080,13 +1080,13 @@ def adminreportFilter(sort):
                             ':ct': {'N': str(totalMealQuantity[order_id_str])},
                         }
                     )
-        
+
         twelveHourTime = datetime.strptime(order['created_at']['S'][11:16], '%H:%M')
-    
+
     for order in orders['Items']:
         order['order_time'] = datetime.strptime(order['created_at']['S'], '%Y-%m-%dT%H:%M:%S').strftime(
             '%m/%d/%y %I:%M:%S%p')
-        
+
         kitchen = db.query(
             TableName='kitchens',
             KeyConditionExpression='kitchen_id = :value',
@@ -1095,9 +1095,9 @@ def adminreportFilter(sort):
             }
         )
         kitchen_name = kitchen['Items'][0]['kitchen_name']['S']
-        
+
         order['kitchen_id']['S'] = kitchen_name
-    
+
     if dataFilter == 1:
         sortedOrders = sorted(orders['Items'], key=lambda x: x['kitchen_id']['S'])
         kitchens = []
@@ -1125,7 +1125,7 @@ def adminreportFilter(sort):
                 kitchen = {}
                 kitchen = order
                 currID = order['kitchen_id']['S']
-        
+
         return render_template('adminreportFarmerItem.html',
                                kitchenName=login_session['kitchen_name'],
                                id=login_session['user_id'],
@@ -1134,7 +1134,7 @@ def adminreportFilter(sort):
                                totalMealQuantity=totalMealQuantity)
     elif dataFilter == 2:
         sortedOrders = sorted(orders['Items'], key=lambda x: (x['kitchen_id']['S'], x['name']['S']))
-        
+
         kitchens = []
         currID = sortedOrders[0]['kitchen_id']['S']
         kitchen = {
@@ -1167,7 +1167,7 @@ def adminreportFilter(sort):
                     'kitchen_name': currID,
                     'orders': []
                 }
-        
+
         return render_template('adminreportFarmerByCustomer.html',
                                kitchenName=login_session['kitchen_name'],
                                id=login_session['user_id'],
@@ -1176,7 +1176,7 @@ def adminreportFilter(sort):
                                totalMealQuantity=totalMealQuantity)
     elif dataFilter == 3:
         sortedOrders = sorted(orders['Items'], key=lambda x: x['name']['S'])
-        
+
         names = []
         currID = sortedOrders[0]['name']['S']
         name = sortedOrders[0]
@@ -1201,7 +1201,7 @@ def adminreportFilter(sort):
                 name = {}
                 name = order
                 currID = order['name']['S']
-        
+
         return render_template('adminreportCustomerItem.html',
                                kitchenName=login_session['kitchen_name'],
                                id=login_session['user_id'],
@@ -1220,43 +1220,43 @@ def adminreport():
     # specify which farmer to which order
     # use kitchens database to get name of farmer using kitchen_id
     # sort orders based on farmerByItem, farmerByCustomer, and customerByItem
-    
+
     if 'kitchen_name' not in login_session:
         return redirect(url_for('index'))
-    
+
     todays_date = datetime.now(tz=timezone('US/Pacific')).strftime('%Y-%m-%d')
-    
+
     orders = db.scan(
         TableName='meal_orders'
     )
-    
+
     allMeals = db.scan(
         TableName='meals'
     )
-    
+
     meals = {}
     previousMeals = {}
     mealItems = []
     previousMealsItems = []
-    
+
     for meal in allMeals['Items']:
         mealItems.append(meal)
-    
+
     meals['Items'] = mealItems
     previousMeals['Items'] = previousMealsItems
-    
+
     todaysMenu = meals['Items']
     pastMenu = previousMeals['Items']
-    
+
     if todaysMenu == None:
         todaysMenu = []
-    
+
     totalRevenue = 0.0
     totalMealQuantity = {}
     for order in orders['Items']:
         for item in order['order_items']['L']:
             order_id = item['M']['meal_id']['S']
-            
+
             meal = db.query(
                 TableName='meals',
                 KeyConditionExpression='meal_id = :value',
@@ -1264,11 +1264,11 @@ def adminreport():
                     ':value': {'S': order_id}
                 }
             )
-            
+
             if meal['Items']:
                 mealInfo = meal['Items'][0]
                 mealDescrip = mealInfo['description']['L'][0]['M']
-                
+
                 # TODO add meal specific price
                 item['photo'] = mealInfo['photo']
                 item['qty'] = int(item['M']['qty']['N'])
@@ -1290,17 +1290,17 @@ def adminreport():
                             ':ct': {'N': str(totalMealQuantity[order_id])}
                         }
                     )
-        
+
         twelveHourTime = datetime.strptime(order['created_at']['S'][11:16], '%H:%M')
-    
+
     sortedOrders = sorted(orders['Items'], key=lambda x: datetime.strptime(x['created_at']['S'], '%Y-%m-%dT%H:%M:%S'),
                           reverse=True)
-    
+
     for order in sortedOrders:
         order['order_time'] = datetime.strptime(order['created_at']['S'], '%Y-%m-%dT%H:%M:%S').strftime(
             '%m/%d/%y %I:%M:%S%p')
         order['order_items']['L'] = sorted(order['order_items']['L'], key=lambda x: x['M']['meal_name']['S'])
-        
+
         kitchen = db.query(
             TableName='kitchens',
             KeyConditionExpression='kitchen_id = :value',
@@ -1309,9 +1309,9 @@ def adminreport():
             }
         )
         kitchen_name = kitchen['Items'][0]['kitchen_name']['S']
-        
+
         order['kitchen_id']['S'] = kitchen_name
-    
+
     return render_template('adminreport.html',
                            kitchenName=login_session['kitchen_name'],
                            id=login_session['user_id'],
@@ -1325,42 +1325,42 @@ def adminreport():
 def report():
     if 'kitchen_name' not in login_session:
         return redirect(url_for('index'))
-    
+
     todays_date = datetime.now(tz=timezone('US/Pacific')).strftime('%Y-%m-%d')
-    
+
     orders = db.scan(TableName='meal_orders',
                      FilterExpression='kitchen_id = :value',
                      ExpressionAttributeValues={
                          ':value': {'S': current_user.get_id()}
                      })
-    
+
     allMeals = db.scan(
         TableName='meals',
         FilterExpression='kitchen_id = :val',
         ExpressionAttributeValues={
             ':val': {'S': login_session['user_id']},
         })
-    
+
     refunds = db.scan(TableName='refund')
     refunds = {refund['email']['S']: True for refund in refunds['Items']}
-    
+
     meals = {}
     previousMeals = {}
     mealItems = []
     previousMealsItems = []
-    
+
     for meal in allMeals['Items']:
         mealItems.append(meal)
-    
+
     meals['Items'] = mealItems
     previousMeals['Items'] = previousMealsItems
-    
+
     todaysMenu = meals['Items']
     pastMenu = previousMeals['Items']
-    
+
     if todaysMenu == None:
         todaysMenu = []
-    
+
     totalPotentialRevenue = 0.0
     totalDeliveredRevenue = 0.0
     totalPotentialQuantity = {}
@@ -1369,13 +1369,13 @@ def report():
         for item in order['order_items']['L']:
             order_id = item['M']['meal_id']['S']
             order_id_str = str(order_id)
-            
+
             meal = [x for x in allMeals['Items'] if x['meal_id']['S'] == order_id_str]
-            
+
             if meal:
                 mealInfo = meal[0]
                 mealDescrip = mealInfo['description']['L'][0]['M']
-                
+
                 # print('\n\n' + str(item) + '\n\n')
                 # TODO add meal specific price
                 item['photo'] = mealInfo['photo']
@@ -1401,12 +1401,12 @@ def report():
                         totalDeliveredQuantity[order_id_str] = item['qty']
                     if item['qty'] > 0:
                         item['name'] = mealInfo['meal_name']['S']
-        
+
         twelveHourTime = datetime.strptime(order['created_at']['S'][11:16], '%H:%M')
-    
+
     sortedOrders = sorted(orders['Items'], key=lambda x: datetime.strptime(x['created_at']['S'], '%Y-%m-%dT%H:%M:%S'),
                           reverse=True)
-    
+
     openOrders = []
     deliveredOrders = []
     for order in sortedOrders:
@@ -1416,7 +1416,7 @@ def report():
             openOrders.append(order)
         if order['status']['S'] == 'delivered':
             deliveredOrders.append(order)
-    
+
     return render_template('report.html',
                            kitchenName=login_session['kitchen_name'],
                            id=login_session['user_id'],
@@ -1436,7 +1436,7 @@ def report():
 def deliver_order(order_id):
     if 'kitchen_name' not in login_session:
         return redirect(url_for('index'))
-    
+
     update_meal = db.update_item(TableName='meal_orders',
                                  Key={'order_id': {'S': order_id}},
                                  UpdateExpression='SET #attr1 = :st',
@@ -1446,7 +1446,7 @@ def deliver_order(order_id):
                                  ExpressionAttributeValues={
                                      ':st': {'S': request.values['status']},
                                  })
-    
+
     response = {'message': 'Request successful'}
     return response, 200
 
@@ -1456,7 +1456,7 @@ def deliver_order(order_id):
 def copy(order_id):
     if 'kitchen_name' not in login_session:
         return redirect(url_for('index'))
-    
+
     order = db.scan(TableName='meal_orders',
                     FilterExpression='order_id = :value',
                     ExpressionAttributeValues={
@@ -1467,7 +1467,7 @@ def copy(order_id):
                               'totalAmount': {'N': '0'}})
     db.put_item(TableName='meal_orders',
                 Item=order['Items'][0])
-    
+
     response = {'message': 'Request successful'}
     return response, 200
 
@@ -1477,7 +1477,7 @@ def copy(order_id):
 def delete_order(order_id):
     if 'kitchen_name' not in login_session:
         return redirect(url_for('index'))
-    
+
     if 'index' in request.values:
         order = db.scan(TableName='meal_orders',
                         FilterExpression='order_id = :value',
@@ -1503,7 +1503,7 @@ def delete_order(order_id):
         delete_meal = db.delete_item(TableName='meal_orders',
                                      Key={'order_id': {'S': order_id}
                                           })
-    
+
     response = {'message': 'Request successful'}
     return response, 200
 
@@ -1514,10 +1514,10 @@ def csv_orders(delivered=False):
                      ExpressionAttributeValues={
                          ':value': {'S': current_user.get_id()}
                      })
-    
+
     data = []
     orders['Items'].sort(key=lambda order: order['created_at']['S'], reverse=True)
-    
+
     for order in orders['Items']:
         if order['status']['S'] == ('delivered' if delivered else 'open'):
             name = order['name']['S'].split()
@@ -1535,13 +1535,13 @@ def csv_orders(delivered=False):
                 data.append([items['M']['price']['N'],
                              items['M']['qty']['N'],
                              items['M']['meal_name']['S']])
-    
+
     si = io.StringIO()
     cw = csv.writer(si)
     cw.writerow(['Open Orders'])
     for item in data:
         cw.writerow(item)
-    
+
     return si.getvalue()
 
 
@@ -1550,9 +1550,9 @@ def csv_orders(delivered=False):
 def detailed_orders():
     if 'kitchen_name' not in login_session:
         return redirect(url_for('index'))
-    
+
     orders = csv_orders()
-    
+
     output = make_response(orders)
     output.headers["Content-Disposition"] = "attachment; filename=orders.csv"
     output.headers["Content-type"] = "text/csv"
@@ -1564,9 +1564,9 @@ def detailed_orders():
 def detailed_orders2():
     if 'kitchen_name' not in login_session:
         return redirect(url_for('index'))
-    
+
     orders = csv_orders(True)
-    
+
     output = make_response(orders)
     output.headers["Content-Disposition"] = "attachment; filename=past_orders.csv"
     output.headers["Content-type"] = "text/csv"
@@ -1579,10 +1579,10 @@ def csv_customers(delivered=False):
                      ExpressionAttributeValues={
                          ':value': {'S': current_user.get_id()}
                      })
-    
+
     orders['Items'].sort(key=lambda order: order['created_at']['S'], reverse=True)
     customers = {}
-    
+
     for order in orders['Items']:
         if order['status']['S'] == ('delivered' if delivered else 'open'):
             if order['email']['S'] not in customers:
@@ -1600,7 +1600,7 @@ def csv_customers(delivered=False):
                                                   float(order['totalAmount']['N'])]
             else:
                 customers[order['email']['S']][10] += float(order['totalAmount']['N'])
-    
+
     si = io.StringIO()
     cw = csv.writer(si)
     cw.writerow(
@@ -1615,9 +1615,9 @@ def csv_customers(delivered=False):
 def detailed_customers():
     if 'kitchen_name' not in login_session:
         return redirect(url_for('index'))
-    
+
     customers = csv_customers()
-    
+
     output = make_response(customers)
     output.headers["Content-Disposition"] = "attachment; filename=customers.csv"
     output.headers["Content-type"] = "text/csv"
@@ -1629,9 +1629,9 @@ def detailed_customers():
 def detailed_customers2():
     if 'kitchen_name' not in login_session:
         return redirect(url_for('index'))
-    
+
     customers = csv_customers(True)
-    
+
     output = make_response(customers)
     output.headers["Content-Disposition"] = "attachment; filename=past_customers.csv"
     output.headers["Content-type"] = "text/csv"
@@ -1644,15 +1644,15 @@ def csv_table(delivered=False):
                     ExpressionAttributeValues={
                         ':value': {'S': current_user.get_id()}
                     })
-    
+
     orders = db.scan(TableName='meal_orders',
                      FilterExpression='kitchen_id = :value',
                      ExpressionAttributeValues={
                          ':value': {'S': current_user.get_id()}
                      })
-    
+
     meals = {meal['meal_name']['S']: 0 for meal in meals['Items']}
-    
+
     si = io.StringIO()
     cw = csv.DictWriter(si, ['Name', 'Email', 'Phone', 'Total'] + list(meals.keys()))
     cw.writeheader()
@@ -1675,9 +1675,9 @@ def csv_table(delivered=False):
 def detailed_table():
     if 'kitchen_name' not in login_session:
         return redirect(url_for('index'))
-    
+
     table = csv_table()
-    
+
     output = make_response(table)
     output.headers["Content-Disposition"] = "attachment; filename=table.csv"
     output.headers["Content-type"] = "text/csv"
@@ -1689,9 +1689,9 @@ def detailed_table():
 def detailed_table2():
     if 'kitchen_name' not in login_session:
         return redirect(url_for('index'))
-    
+
     table = csv_table(True)
-    
+
     output = make_response(table)
     output.headers["Content-Disposition"] = "attachment; filename=past_table.csv"
     output.headers["Content-type"] = "text/csv"
@@ -1702,24 +1702,24 @@ def detailed_table2():
 def detailed_routes():
     if 'kitchen_name' not in login_session:
         return redirect(url_for('index'))
-    
+
     delivery = db.scan(TableName='delivery_orders')
     for item in delivery['Items']:
         db.delete_item(TableName='delivery_orders',
                        Key={'delivery_id': {'N': item['delivery_id']['N']}})
-    
+
     orders = db.scan(TableName='meal_orders',
                      FilterExpression='kitchen_id = :value',
                      ExpressionAttributeValues={
                          ':value': {'S': current_user.get_id()}
                      })
-    
+
     customers = {}
-    
+
     for i, order in enumerate(orders['Items']):
         if order['status']['S'] == 'open' and order['name']['S'] not in customers:
             customers[order['name']['S']] = True
-            
+
             name = order['name']['S'].split()
             db.put_item(TableName='delivery_orders',
                         Item={
@@ -1741,7 +1741,7 @@ def detailed_routes():
                             'delivery_day': {'S': ''},
                             'kitchen_id': {'S': order['kitchen_id']['S']},
                             'delivery_instructions': {'S': order['delivery_instructions']['S'] if 'delivery_instructions' in order else ''}})
-    
+
     response = {'message': 'Request successful'}
     return response, 200
 
@@ -1751,7 +1751,7 @@ def detailed_routes():
 def send_reports():
     if 'kitchen_name' not in login_session:
         return redirect(url_for('index'))
-    
+
     msg = Message("Serving Now Reports",
                   sender="support@servingnow.me",
                   recipients=["support@servingnow.me", login_session['email']])
@@ -1759,7 +1759,7 @@ def send_reports():
     msg.attach('customers.csv', 'text/csv', csv_customers())
     msg.attach('table.csv', 'text/csv', csv_table())
     mail.send(msg)
-    
+
     response = {'message': 'Request successful'}
     return response, 200
 
@@ -1777,7 +1777,7 @@ def closeKitchen(kitchen_id):
 def updateKitchensStatus():
     if request.headers['X-Appengine-Cron'] == 'true':
         currentTime = datetime.now(tz=timezone('US/Pacific')).strftime('%H:%M')
-        
+
         kitchens = db.scan(TableName='kitchens')
         for kitchen in kitchens['Items']:
             closeTime = kitchen['close_time']['S']
@@ -1793,24 +1793,24 @@ def updateKitchensStatus():
 @app.route('/api/v1/meals/<meal_id>', methods=['GET', 'PUT'])
 def delete(meal_id):
     # flash('meal id for the selected meal is {}'.format(meal_id))
-    
+
     # input argument validation
     response = {}
-    
+
     try:
         # Get kitchen id and delete from s3 bucket first
         response = db.get_item(TableName='meals', Key={'meal_id': {'S': str(meal_id)}})
-        
+
         kitchen_id = response['Item']['kitchen_id']['S']
-        
+
         photo_key = 'meals_imgs/{}_{}'.format(str(kitchen_id), str(meal_id))
-        
+
         # delete from meals table
         deleted_meal = db.delete_item(TableName='meals',
                                       Key={'meal_id': {'S': meal_id}})
-        
+
         delete_s3_img(BUCKET_NAME, photo_key)
-        
+
         response['message'] = 'Request successful'
         return response, 200
     except Exception as ex:
@@ -1826,10 +1826,10 @@ def autoRenewMeal(meal_id):
                        ':value': {'S': meal_id},
                    }
                    )
-    
+
     old_auto_renew_val = meal['Items'][0]['auto_renew']['BOOL']
     new_auto_renew_val = not old_auto_renew_val
-    
+
     auto_renew_meal = db.update_item(TableName='meals',
                                      Key={'meal_id': {'S': str(meal_id)}},
                                      UpdateExpression='SET auto_renew = :val',
@@ -1842,10 +1842,10 @@ def autoRenewMeal(meal_id):
 @app.route('/api/v1/meals/fav/<string:meal_id>', methods=['POST'])
 def favorite(meal_id):
     # flash('meal id for the selected meal is {}'.format(meal_id))
-    
+
     # input argument validation
     response = {}
-    
+
     # get meal from meals table
     meal = db.scan(TableName='meals',
                    FilterExpression='meal_id = :value',
@@ -1853,23 +1853,23 @@ def favorite(meal_id):
                        ':value': {'S': meal_id},
                    }
                    )
-    
+
     old_fav_val = meal['Items'][0]['favorite']['BOOL']
     new_fav_val = not old_fav_val
-    
+
     fav_meal = db.update_item(TableName='meals',
                               Key={'meal_id': {'S': str(meal_id)}},
                               UpdateExpression='SET favorite = :val',
                               ExpressionAttributeValues={
                                   ':val': {'BOOL': new_fav_val}}
                               )
-    
+
     response['message'] = 'Request successful'
     return response, 200
 #-----------------------------------------------------------------------------
 @app.route('/admin/chart')
 def chart():
-    
+
     orders = db.scan(TableName='meal_orders',
                      FilterExpression='kitchen_id = :value',
                      ExpressionAttributeValues={
@@ -1884,6 +1884,21 @@ def chart():
     print(orders['Items'])
     print(len(orders['Items']))
     return render_template("charts.html", orders= orders['Items'],)
+
+@app.route('/api/meal_orders')
+def meal_orders():
+    kitchen_id = request.args.get('kitchen_id')
+    if kitchen_id:
+        return db.scan(TableName='meal_orders', FilterExpression='#name = :val',
+        ExpressionAttributeNames={'#name': 'kitchen_id'}, ExpressionAttributeValues={':val': {'S': kitchen_id}})
+    else:
+        return db.scan(TableName='meal_orders')
+
+@app.route('/admin/chart/revenue')
+@login_required
+def revenueChart():
+    kitchens = db.scan(TableName='kitchens')['Items']
+    return render_template('revenueChart.html', kitchens=kitchens)
 #-----------------------------------------------------------------------------
 
 @app.route('/email_test')
